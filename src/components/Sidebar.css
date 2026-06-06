@@ -1,0 +1,261 @@
+/* Sidebar con iconos PNG y nombres */
+.sidebar {
+  width: 100px; /* Ancho ajustado para iconos + nombres */
+  background-color: #0f172a;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  border-right: 1px solid #1e293b;
+}
+
+.sidebar-header {
+  padding: 16px 0;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* --- Ajuste de la T para que sea más grande --- */
+.logo-gradient-bg {
+  width: 55px; /* Contenedor más grande que los iconos */
+  height: 55px;
+  /* Degradado sutil y moderno de fondo exclusivo para la T */
+  background: linear-gradient(135deg, rgba(var(--tm-primary-rgb-500), 0.1) 0%, rgba(15, 23, 42, 0) 100%);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(var(--tm-primary-rgb-500), 0.2);
+}
+
+.sidebar-logo-img {
+  max-width: 35px; /* La T destaca dentro de su cuadro */
+  height: auto;
+  display: block;
+  /* Sutil sombra para dar volumen a la T */
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 62px;
+  text-decoration: none;
+  color: #94a3b8;
+  border-radius: 12px;
+  transition: all 0.2s ease-out;
+  position: relative;
+  padding: 4px;
+}
+
+/* Iconos SVG (Lucide) */
+.nav-icon-svg {
+  width: 26px;
+  height: 26px;
+  margin-bottom: 4px;
+  transition: transform 0.2s ease;
+  stroke: currentColor;
+}
+
+.nav-item:hover .nav-icon-svg {
+  transform: scale(1.1);
+}
+
+/* Texto del menú */
+.nav-text {
+  font-size: 10px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 70px;
+  word-wrap: break-word;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.03); /* Hover sutil */
+  color: #ffffff;
+  transform: translateY(-2px); /* Pequeña animación física */
+}
+
+/* Estado Activo */
+.nav-item.active {
+  background-color: var(--tm-primary-500);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(var(--tm-primary-rgb-500), 0.4);
+}
+
+.nav-item.active .nav-icon-svg {
+  filter: drop-shadow(0 1px 3px rgba(255,255,255,0.3));
+}
+
+.sidebar-cola {
+  padding: 10px 0;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid #1e293b;
+}
+
+.sidebar-footer {
+  padding: 20px 0;
+  border-top: 1px solid #1e293b;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-logout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 56px;
+  background-color: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px;
+}
+
+.btn-logout .nav-text {
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.btn-logout:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Información del usuario */
+.sidebar-user-info {
+  padding: 12px 0;
+  border-top: 1px solid #1e293b;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: white;
+  border: 2px solid rgba(102, 126, 234, 0.3);
+  cursor: help;
+  transition: all 0.2s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.1);
+  border-color: rgba(102, 126, 234, 0.6);
+}
+
+/* Responsive Design - Media Queries */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 80px;
+  }
+
+  .nav-item {
+    width: 70px;
+    height: 56px;
+  }
+
+  .nav-icon-svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .nav-text {
+    font-size: 9px;
+  }
+
+  .sidebar-logo-img {
+    max-width: 30px;
+  }
+
+  .logo-gradient-bg {
+    width: 45px;
+    height: 45px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .btn-logout {
+    width: 70px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px;
+  }
+
+  .nav-item {
+    width: 60px;
+    height: 50px;
+  }
+
+  .nav-icon-svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .nav-text {
+    font-size: 8px;
+  }
+
+  .sidebar-logo-img {
+    max-width: 25px;
+  }
+
+  .logo-gradient-bg {
+    width: 38px;
+    height: 38px;
+  }
+
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .btn-logout {
+    width: 60px;
+    height: 45px;
+  }
+
+  .btn-logout .nav-text {
+    font-size: 8px;
+  }
+}

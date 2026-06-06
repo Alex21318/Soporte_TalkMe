@@ -1,0 +1,683 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from 'react-toastify';
+import { API_URLS } from '../../config/api';
+import '../Cierres/Cierres.css'; // Reutilizamos estilos de Cierres
+
+function aHistorialEstados({ dbKey }) {
+  // Estados de filtros
+  const [idEmpresa, setIdEmpresa] = useState('');
+  const [perfil, setPerfil] = useState('');
+  const [estado, setEstado] = useState('');
+  const [idUsuario, setIdUsuario] = useState('');
+  
+  // Skills seleccionados (array como en Masiva)
+  const [skillsSeleccionados, setSkillsSeleccionados] = useState([]);
+  const [showSkillsDropdown, setShowSkillsDropdown] = useState(false);
+  const [skillsSearch, setSkillsSearch] = useState('');
+  const skillsDropdownRef = useRef(null);
+  
+  // Bot Redes seleccionados (array como en Masiva)
+  const [botRedesSeleccionados, setBotRedesSeleccionados] = useState([]);
+  const [showBotRedesDropdown, setShowBotRedesDropdown] = useState(false);
+  const [botRedesSearch, setBotRedesSearch] = useState('');
+  const botRedesDropdownRef = useRef(null);
+  const [fechaInicio, setFechaInicio] = useState(() => {
+    const hoy = new Date();
+    return hoy.toISOString().split('T')[0];
+  });
+  const [fechaFin, setFechaFin] = useState(() => {
+    const hoy = new Date();
+    return hoy.toISOString().split('T')[0];
+  });
+
+  // Listas para dropdowns
+  const [empresas, setEmpresas] = useState([]);
+  const [perfiles, setPerfiles] = useState([]);
+  const [estadosDisponibles, setEstadosDisponibles] = useState([]);
+  const [usuariosLista, setUsuariosLista] = useState([]);
+  const [skillsDisponibles, setSkillsDisponibles] = useState([]);
+  const [botRedesDisponibles, setBotRedesDisponibles] = useState([]);
+
+  // Resultados y loading
+  const [resultados, setResultados] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingEmpresas, setLoadingEmpresas] = useState(false);
+  const [loadingPerfiles, setLoadingPerfiles] = useState(false);
+  const [loadingEstados, setLoadingEstados] = useState(false);
+  const [loadingSkills, setLoadingSkills] = useState(false);
+  const [loadingBotRedes, setLoadingBotRedes] = useState(false);
+
+  // Paginación
+  const [pagina, setPagina] = useState(1);
+  const ITEMS_POR_PAGINA = 25;
+
+  // Cargar empresas al montar
+  useEffect(() => {
+    cargarEmpresas();
+    cargarPerfiles();
+    cargarEstados();
+    cargarSkillsDisponibles();
+    cargarBotRedesDisponibles();
+  }, [dbKey]);
+
+  // Cargar skills y bot redes cuando cambia la empresa
+  useEffect(() => {
+    if (idEmpresa) {
+      cargarSkillsDisponibles();
+      cargarBotRedesDisponibles();
+    }
+  }, [idEmpresa, dbKey]);
+
+  // Resetear página cuando cambian filtros
+  useEffect(() => {
+    setPagina(1);
+  }, [idEmpresa, perfil, estado, idUsuario, skillsSeleccionados, botRedesSeleccionados, fechaInicio, fechaFin]);
+
+  // Cerrar dropdowns al hacer click fuera
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (skillsDropdownRef.current && !skillsDropdownRef.current.contains(event.target)) {
+        setShowSkillsDropdown(false);
+      }
+      if (botRedesDropdownRef.current && !botRedesDropdownRef.current.contains(event.target)) {
+        setShowBotRedesDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const cargarEmpresas = async () => {
+    setLoadingEmpresas(true);
+    try {
+      const res = await fetch(API_URLS.empresas(dbKey));
+      const data = await res.json();
+      setEmpresas(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Error cargando empresas:', e);
+    } finally {
+      setLoadingEmpresas(false);
+    }
+  };
+
+  const cargarPerfiles = async () => {
+    setLoadingPerfiles(true);
+    try {
+      // Usar endpoint de seguridad para obtener perfiles
+      const dbKeySeg = dbKey.includes('ficohsa') ? 'db_10' : 'db_9';
+      const res = await fetch(API_URLS.perfilesSeguridad(dbKeySeg));
+      const data = await res.json();
+      // Filtrar perfiles únicos por nombre
+      const unicos = [];
+      const nombresVistos = new Set();
+      (Array.isArray(data) ? data : []).forEach(p => {
+        if (!nombresVistos.has(p.NOMBRE)) {
+          nombresVistos.add(p.NOMBRE);
+          unicos.push(p);
+        }
+      });
+      setPerfiles(unicos);
+    } catch (e) {
+      console.error('Error cargando perfiles:', e);
+    } finally {
+      setLoadingPerfiles(false);
+    }
+  };
+
+  const cargarEstados = async () => {
+    setLoadingEstados(true);
+    try {
+      // Necesitamos id_empresa para estados, pero lo dejamos vacío inicialmente
+      // o cargamos todos los estados del primer db
+      const res = await fetch(API_URLS.estadosDisponibles(dbKey, ''));
+      const data = await res.json();
+      setEstadosDisponibles(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Error cargando estados:', e);
+    } finally {
+      setLoadingEstados(false);
+    }
+  };
+
+  // Cargar estados específicos cuando cambia la empresa
+  useEffect(() => {
+    if (idEmpresa) {
+      cargarEstadosEmpresa();
+    }
+  }, [idEmpresa, dbKey]);
+
+  const cargarEstadosEmpresa = async () => {
+    try {
+      const res = await fetch(API_URLS.estadosDisponibles(dbKey, idEmpresa));
+      const data = await res.json();
+      setEstadosDisponibles(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Error cargando estados de empresa:', e);
+    }
+  };
+
+  const cargarSkillsDisponibles = async () => {
+    if (!dbKey || !idEmpresa) return;
+    setLoadingSkills(true);
+    try {
+      const res = await fetch(API_URLS.skillsDisponibles(dbKey, idEmpresa, ''));
+      const data = await res.json();
+      setSkillsDisponibles(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Error cargando skills:', e);
+    } finally {
+      setLoadingSkills(false);
+    }
+  };
+
+  const cargarBotRedesDisponibles = async () => {
+    if (!dbKey || !idEmpresa) return;
+    setLoadingBotRedes(true);
+    try {
+      const res = await fetch(API_URLS.botRedesDisponibles(dbKey, idEmpresa, ''));
+      const data = await res.json();
+      setBotRedesDisponibles(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Error cargando bot redes:', e);
+    } finally {
+      setLoadingBotRedes(false);
+    }
+  };
+
+  const buscar = async () => {
+    if (!fechaInicio || !fechaFin) {
+      toast.error('Debe especificar fecha inicial y final');
+      return;
+    }
+
+    setLoading(true);
+    setResultados([]);
+    setPagina(1);
+
+    try {
+      // Convertir arrays de seleccionados a strings de IDs/nombres para el filtro
+      const skillsFiltro = skillsSeleccionados.map(s => s.NOMBRE_SKILL).join(',');
+      const botRedesFiltro = botRedesSeleccionados.map(b => b.NOMBRE_BOT || b.DESCRIPCION).join(',');
+      
+      const url = API_URLS.historialEstados(dbKey, {
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
+        id_empresa: idEmpresa,
+        perfil,
+        estado,
+        id_usuario: idUsuario,
+        skills: skillsFiltro,
+        bot_redes: botRedesFiltro
+      });
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al consultar historial');
+      }
+
+      setResultados(Array.isArray(data) ? data : []);
+      
+      if (data.length === 0) {
+        toast.info('No se encontraron registros en el rango de fechas especificado');
+      } else {
+        toast.success(`${data.length} registros encontrados`);
+      }
+    } catch (e) {
+      console.error('Error buscando historial:', e);
+      toast.error(e.message || 'Error al consultar historial de estados');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Paginación
+  const totalPaginas = Math.ceil(resultados.length / ITEMS_POR_PAGINA);
+  const inicio = (pagina - 1) * ITEMS_POR_PAGINA;
+  const fin = inicio + ITEMS_POR_PAGINA;
+  const resultadosPagina = resultados.slice(inicio, fin);
+
+  // Formatear fecha y hora
+  const formatearFecha = (fechaStr) => {
+    if (!fechaStr) return '-';
+    const fecha = new Date(fechaStr);
+    return fecha.toLocaleDateString('es-GT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const formatearHora = (fechaStr) => {
+    if (!fechaStr) return '-';
+    const fecha = new Date(fechaStr);
+    return fecha.toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  };
+
+  return (
+    <div className="ci-masiva">
+      {/* Filtros */}
+      <div className="ci-masiva-filters">
+        <div className="ci-masiva-field">
+          <span className="ci-masiva-label">Fecha Inicio *</span>
+          <input
+            type="date"
+            className="ci-masiva-select"
+            value={fechaInicio}
+            onChange={e => setFechaInicio(e.target.value)}
+          />
+        </div>
+        <div className="ci-masiva-field">
+          <span className="ci-masiva-label">Fecha Fin *</span>
+          <input
+            type="date"
+            className="ci-masiva-select"
+            value={fechaFin}
+            onChange={e => setFechaFin(e.target.value)}
+          />
+        </div>
+        <div className="ci-masiva-field ci-masiva-field-emp">
+          <span className="ci-masiva-label">Empresa</span>
+          <select
+            className="ci-masiva-select"
+            value={idEmpresa}
+            onChange={e => setIdEmpresa(e.target.value)}
+          >
+            <option value="">Todas las empresas</option>
+            {empresas.map(e => (
+              <option key={e.ID_EMPRESA} value={e.ID_EMPRESA}>
+                [{e.ID_EMPRESA}] {e.NOMBRE}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="ci-masiva-field">
+          <span className="ci-masiva-label">Perfil</span>
+          <select
+            className="ci-masiva-select"
+            value={perfil}
+            onChange={e => setPerfil(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {perfiles.map(p => (
+              <option key={p.SECPERFILID} value={p.NOMBRE}>
+                {p.NOMBRE}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="ci-masiva-field">
+          <span className="ci-masiva-label">Estado Plataforma</span>
+          <select
+            className="ci-masiva-select"
+            value={estado}
+            onChange={e => setEstado(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {estadosDisponibles.map(e => (
+              <option key={e.ID_ESTADO} value={e.ID_ESTADO}>
+                {e.NOMBRE}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="ci-masiva-field ci-masiva-field-elem">
+          <span className="ci-masiva-label">Usuario</span>
+          <input
+            type="text"
+            className="ci-masiva-select"
+            placeholder="Nombre o ID de usuario..."
+            value={idUsuario}
+            onChange={e => setIdUsuario(e.target.value)}
+          />
+        </div>
+        {/* Skills - Selección múltiple tipo Masiva */}
+        <div className="ci-masiva-field usr-topbar-field-skills" ref={skillsDropdownRef}>
+          <span className="ci-masiva-label">
+            Skills{skillsSeleccionados.length > 0 ? ` (${skillsSeleccionados.length})` : ''} {loadingSkills && '⌛'}
+          </span>
+          <div className="usr-skills-filtro-wrap">
+            <div
+              className={`usr-skills-filtro-input ${showSkillsDropdown ? 'open' : ''}`}
+              onClick={() => setShowSkillsDropdown(v => !v)}
+            >
+              {skillsSeleccionados.length === 0
+                ? <span className="usr-skills-filtro-placeholder">Filtrar por skill...</span>
+                : <span className="usr-skills-filtro-summary">
+                    {skillsSeleccionados.length === 1 ? skillsSeleccionados[0].NOMBRE_SKILL : `${skillsSeleccionados.length} skills seleccionadas`}
+                  </span>
+              }
+              <span className="usr-skills-filtro-chevron">{showSkillsDropdown ? '▲' : '▼'}</span>
+            </div>
+            {showSkillsDropdown && (
+              <div className="usr-skills-filtro-dropdown">
+                <div className="usr-skills-filtro-header">
+                  <input 
+                    className="usr-skills-filtro-search" 
+                    type="text" 
+                    placeholder="🔍 Buscar skill..."
+                    value={skillsSearch}
+                    onChange={e => setSkillsSearch(e.target.value)}
+                    onClick={e => e.stopPropagation()}
+                  />
+                  <div className="usr-skills-filtro-actions">
+                    <button
+                      type="button"
+                      className="usr-skills-filtro-action-btn"
+                      onClick={ev => { ev.stopPropagation(); setSkillsSeleccionados(skillsDisponibles); }}
+                    >
+                      Todos
+                    </button>
+                    <button
+                      type="button"
+                      className="usr-skills-filtro-action-btn"
+                      onClick={ev => { ev.stopPropagation(); setSkillsSeleccionados([]); }}
+                    >
+                      Ninguno
+                    </button>
+                  </div>
+                </div>
+                <div className="usr-skills-filtro-list">
+                  {skillsDisponibles
+                    .filter(s => !skillsSearch || s.NOMBRE_SKILL.toLowerCase().includes(skillsSearch.toLowerCase()))
+                    .map(s => {
+                      const isSelected = skillsSeleccionados.some(sel => sel.ID_SKILL === s.ID_SKILL);
+                      return (
+                        <label key={s.ID_SKILL} className="usr-skills-filtro-item">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={ev => {
+                              ev.stopPropagation();
+                              if (isSelected) {
+                                setSkillsSeleccionados(prev => prev.filter(x => x.ID_SKILL !== s.ID_SKILL));
+                              } else {
+                                setSkillsSeleccionados(prev => [...prev, s]);
+                              }
+                            }}
+                          />
+                          <span>{s.NOMBRE_SKILL}</span>
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bot Redes - Selección múltiple tipo Masiva */}
+        <div className="ci-masiva-field usr-topbar-field-skills" ref={botRedesDropdownRef}>
+          <span className="ci-masiva-label">
+            Bot Redes{botRedesSeleccionados.length > 0 ? ` (${botRedesSeleccionados.length})` : ''} {loadingBotRedes && '⌛'}
+          </span>
+          <div className="usr-skills-filtro-wrap">
+            <div
+              className={`usr-skills-filtro-input ${showBotRedesDropdown ? 'open' : ''}`}
+              onClick={() => setShowBotRedesDropdown(v => !v)}
+            >
+              {botRedesSeleccionados.length === 0
+                ? <span className="usr-skills-filtro-placeholder">Filtrar por bot...</span>
+                : <span className="usr-skills-filtro-summary">
+                    {botRedesSeleccionados.length === 1 ? (botRedesSeleccionados[0].NOMBRE_BOT || botRedesSeleccionados[0].DESCRIPCION) : `${botRedesSeleccionados.length} bots seleccionados`}
+                  </span>
+              }
+              <span className="usr-skills-filtro-chevron">{showBotRedesDropdown ? '▲' : '▼'}</span>
+            </div>
+            {showBotRedesDropdown && (
+              <div className="usr-skills-filtro-dropdown">
+                <div className="usr-skills-filtro-header">
+                  <input 
+                    className="usr-skills-filtro-search" 
+                    type="text" 
+                    placeholder="🔍 Buscar bot..."
+                    value={botRedesSearch}
+                    onChange={e => setBotRedesSearch(e.target.value)}
+                    onClick={e => e.stopPropagation()}
+                  />
+                  <div className="usr-skills-filtro-actions">
+                    <button
+                      type="button"
+                      className="usr-skills-filtro-action-btn"
+                      onClick={ev => { ev.stopPropagation(); setBotRedesSeleccionados(botRedesDisponibles); }}
+                    >
+                      Todos
+                    </button>
+                    <button
+                      type="button"
+                      className="usr-skills-filtro-action-btn"
+                      onClick={ev => { ev.stopPropagation(); setBotRedesSeleccionados([]); }}
+                    >
+                      Ninguno
+                    </button>
+                  </div>
+                </div>
+                <div className="usr-skills-filtro-list">
+                  {botRedesDisponibles
+                    .filter(b => !botRedesSearch || (b.NOMBRE_BOT || b.DESCRIPCION || '').toLowerCase().includes(botRedesSearch.toLowerCase()))
+                    .map(b => {
+                      const nombreBot = b.NOMBRE_BOT || b.DESCRIPCION || 'Sin nombre';
+                      const isSelected = botRedesSeleccionados.some(sel => sel.ID_BOT_REDES === b.ID_BOT_REDES);
+                      return (
+                        <label key={b.ID_BOT_REDES} className="usr-skills-filtro-item">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={ev => {
+                              ev.stopPropagation();
+                              if (isSelected) {
+                                setBotRedesSeleccionados(prev => prev.filter(x => x.ID_BOT_REDES !== b.ID_BOT_REDES));
+                              } else {
+                                setBotRedesSeleccionados(prev => [...prev, b]);
+                              }
+                            }}
+                          />
+                          <span>{nombreBot}</span>
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <button className="ci-btn-buscar" onClick={buscar} disabled={loading}>
+          {loading ? '⏳ Buscando...' : '🔍 Buscar Historial'}
+        </button>
+      </div>
+
+      {/* Resultados */}
+      {!loading && resultados.length > 0 && (
+        <div className="ci-masiva-lista">
+          <div className="ci-masiva-lista-hdr">
+            <span className="ci-masiva-label">
+              {resultados.length} registro(s) encontrados
+            </span>
+            <button
+              className="usr-export-btn"
+              onClick={() => exportarCSV(resultados)}
+              title="Exportar a CSV"
+            >
+              📥 Exportar CSV
+            </button>
+          </div>
+
+          <div className="ci-masiva-content">
+            <div className="ci-historial-table-container">
+              <table className="ci-historial-table">
+                <thead>
+                  <tr>
+                    <th>Usuario</th>
+                    <th>Perfiles</th>
+                    <th>Skills</th>
+                    <th>Bot Redes</th>
+                    <th>Estado</th>
+                    <th>Fecha Inicio</th>
+                    <th>Hora Inicio</th>
+                    <th>Fecha Fin</th>
+                    <th>Hora Fin</th>
+                    <th>Duración</th>
+                    <th>Móvil</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resultadosPagina.map((r, idx) => (
+                    <tr key={`${r.id_estado_usuarios}-${idx}`}>
+                      <td>
+                        <div className="ci-historial-usuario">
+                          <strong>{r.login_usuario}</strong>
+                          <small>{r.nombre_usuario}</small>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="ci-historial-tags">
+                          {(r.perfiles || 'Sin perfil').split(', ').filter(p => p.trim()).map((p, i) => (
+                            <span key={i} className="ci-historial-tag">{p.trim()}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="ci-historial-tags">
+                          {(r.skills || []).map((s, i) => (
+                            <span key={i} className="ci-historial-tag skill">{s}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="ci-historial-tags">
+                          {(r.bot_redes || []).map((b, i) => (
+                            <span key={i} className="ci-historial-tag bot">{b}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          className="ci-historial-estado"
+                          style={{ 
+                            backgroundColor: r.color_estado || '#ccc',
+                            color: getContrastColor(r.color_estado)
+                          }}
+                        >
+                          {r.nombre_estado || 'N/A'}
+                          {r.estado_pausa && ' (Pausa)'}
+                        </span>
+                      </td>
+                      <td>{formatearFecha(r.hora_inicio)}</td>
+                      <td>{formatearHora(r.hora_inicio)}</td>
+                      <td>{formatearFecha(r.hora_fin)}</td>
+                      <td>{formatearHora(r.hora_fin)}</td>
+                      <td>
+                        <span className="ci-historial-duracion">
+                          {calcularDuracion(r.hora_inicio, r.hora_fin)}
+                        </span>
+                      </td>
+                      <td>
+                        {r.movil ? (
+                          <span className="ci-historial-movil">📱</span>
+                        ) : (
+                          <span className="ci-historial-desktop">💻</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Paginación */}
+            {resultados.length > 0 && (
+              <div className="ci-paginacion">
+                <button
+                  onClick={() => setPagina(p => Math.max(1, p - 1))}
+                  disabled={pagina === 1}
+                  className="ci-btn-pagina"
+                >
+                  ← Anterior
+                </button>
+                <span className="ci-pagina-actual">
+                  {pagina} / {totalPaginas}
+                </span>
+                <button
+                  onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
+                  disabled={pagina === totalPaginas}
+                  className="ci-btn-pagina"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!loading && resultados.length === 0 && (
+        <div className="ci-masiva-empty">
+          <p>No hay resultados. Seleccione un rango de fechas y haga clic en "Buscar Historial".</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Helper para calcular duración entre dos fechas
+function calcularDuracion(horaInicio, horaFin) {
+  if (!horaInicio) return '-';
+  const inicio = new Date(horaInicio);
+  const fin = horaFin ? new Date(horaFin) : new Date();
+  const diffMs = fin - inicio;
+  const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const diffSecs = Math.floor((diffMs % (1000 * 60)) / 1000);
+  
+  if (diffHrs > 0) {
+    return `${diffHrs}h ${diffMins}m`;
+  } else if (diffMins > 0) {
+    return `${diffMins}m ${diffSecs}s`;
+  } else {
+    return `${diffSecs}s`;
+  }
+}
+
+// Helper para determinar color de contraste (blanco/negro) según fondo
+function getContrastColor(hexColor) {
+  if (!hexColor) return '#000';
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#000' : '#fff';
+}
+
+// Exportar a CSV
+function exportarCSV(data) {
+  const headers = ['Usuario', 'Nombre', 'Perfiles', 'Skills', 'Bot Redes', 'Estado', 'Fecha Inicio', 'Hora Inicio', 'Fecha Fin', 'Hora Fin', 'Movil'];
+  
+  const rows = data.map(r => [
+    r.login_usuario,
+    r.nombre_usuario,
+    r.perfiles,
+    r.skills.join('; '),
+    r.bot_redes.join('; '),
+    r.nombre_estado,
+    new Date(r.hora_inicio).toLocaleDateString('es-GT'),
+    new Date(r.hora_inicio).toLocaleTimeString('es-GT'),
+    r.hora_fin ? new Date(r.hora_fin).toLocaleDateString('es-GT') : '',
+    r.hora_fin ? new Date(r.hora_fin).toLocaleTimeString('es-GT') : '',
+    r.movil ? 'Si' : 'No'
+  ]);
+  
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(','))
+  ].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `historial_estados_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  toast.success('Archivo CSV exportado');
+}
+
+export default aHistorialEstados;

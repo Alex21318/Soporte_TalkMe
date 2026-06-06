@@ -1,0 +1,502 @@
+/* ==========================================================================
+   FUENTES - Debe estar al principio antes de cualquier otra regla CSS
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ==========================================================================
+   SISTEMA DE TEMAS (variables CSS + paletas dinámicas)
+   ========================================================================== */
+@import './styles/theme.css';
+
+/* ==========================================================================
+   TAILWIND CSS v3 - Directivas
+   ========================================================================== */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Cadena height 100% para que todos los módulos ocupen pantalla completa */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Los estilos de Diagramas están en Diagramas.css con prefijo #modulo-diagramas-root */
+
+#modulo-diagramas-root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+  padding: 6px 6px;
+  box-sizing: border-box;
+  gap: 6px;
+}
+
+#modulo-diagramas-root .react-flow {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 500px;
+}
+
+#modulo-diagramas-root .react-flow__viewport {
+  width: 100%;
+  height: 100%;
+}
+
+/* Scroll personalizado global */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--tm-border-strong);
+  border-radius: var(--tm-radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--tm-text-muted);
+}
+#modulo-diagramas-root .custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+#modulo-diagramas-root .animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+#modulo-diagramas-root .animation-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+#modulo-diagramas-root .animate-slide-down {
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+/* ==========================================================================
+   BARRA SUPERIOR
+   ========================================================================== */
+#modulo-diagramas-root .top-navbar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  padding: 0 16px;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+#modulo-diagramas-root .nav-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+#modulo-diagramas-root .nav-logo img {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.06));
+  transition: transform 0.2s ease;
+  height: 30px;
+  width: auto;
+}
+#modulo-diagramas-root .nav-logo:hover img {
+  transform: scale(1.02);
+}
+
+#modulo-diagramas-root .project-info {
+  flex: 1;
+  max-width: 480px;
+  min-width: 260px;
+}
+
+#modulo-diagramas-root .project-name-input {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  font-weight: 700;
+  font-size: 13px;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 8px;
+  width: 100%;
+  color: #0f172a;
+}
+#modulo-diagramas-root .project-name-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: white;
+  outline: none;
+}
+
+#modulo-diagramas-root .file-name {
+  display: block;
+  font-size: 11px;
+  font-family: monospace;
+  color: #64748b;
+  margin-top: 6px;
+  margin-left: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.2px;
+}
+
+/* Botones de navegación */
+#modulo-diagramas-root .nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 12.5px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+}
+
+#modulo-diagramas-root .nav-btn-primary {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+#modulo-diagramas-root .nav-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+}
+
+#modulo-diagramas-root .nav-btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+#modulo-diagramas-root .nav-btn-secondary:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+#modulo-diagramas-root .nav-btn-outline {
+  background: transparent;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+#modulo-diagramas-root .nav-btn-outline:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+#modulo-diagramas-root .nav-btn-danger {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+#modulo-diagramas-root .nav-btn-danger:hover {
+  background: #fee2e2;
+  transform: translateY(-1px);
+}
+
+#modulo-diagramas-root .nav-btn-success {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+#modulo-diagramas-root .nav-btn-success:hover {
+  background: #d1fae5;
+  transform: translateY(-1px);
+}
+
+/* Toggles */
+#modulo-diagramas-root .toggle-group {
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  display: inline-flex;
+  gap: 2px;
+}
+
+#modulo-diagramas-root .toggle-btn {
+  height: 28px;
+  padding: 0 18px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+}
+#modulo-diagramas-root .toggle-btn.active {
+  background: white;
+  color: #1e293b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Select personalizado */
+#modulo-diagramas-root .custom-select {
+  appearance: none;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  height: 34px;
+  padding: 0 32px 0 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+#modulo-diagramas-root .custom-select:hover {
+  background: white;
+  border-color: #cbd5e1;
+}
+#modulo-diagramas-root .custom-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+#modulo-diagramas-root .nav-divider {
+  width: 1px;
+  height: 34px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   NODOS
+   ========================================================================== */
+#modulo-diagramas-root .react-flow__node-botNode.centered-label-node .node-content {
+  text-align: center;
+  justify-content: center;
+}
+#modulo-diagramas-root .react-flow__node-botNode.centered-label-node .node-label {
+  text-align: center;
+  width: 100%;
+}
+
+.edge-punteada-simple path {
+  stroke-dasharray: 5, 5 !important;
+}
+
+#modulo-diagramas-root .react-flow__node[data-hidden="true"],
+#modulo-diagramas-root .react-flow__node.hidden-node {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+#modulo-diagramas-root .react-flow__node-botNode {
+  border-radius: 20px !important;
+  background: white !important;
+  border: 1.5px solid #e2e8f0 !important;
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+#modulo-diagramas-root .react-flow__node-botNode:hover {
+  transform: translateY(-3px);
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+#modulo-diagramas-root .react-flow__node-botNode.selected {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12), 0 12px 25px -8px rgba(0, 0, 0, 0.15) !important;
+}
+
+#modulo-diagramas-root .node-type-badge {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 24px !important;
+  padding: 4px 12px !important;
+  font-weight: 700 !important;
+  font-size: 10px !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* Menú contextual */
+#modulo-diagramas-root .context-menu {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+  min-width: 280px;
+  position: fixed;
+  z-index: 1000;
+}
+
+#modulo-diagramas-root .context-menu-item {
+  transition: all 0.2s ease;
+  margin: 4px 8px;
+  border-radius: 12px;
+}
+#modulo-diagramas-root .context-menu-item:hover {
+  background: #fef2f2;
+  padding-left: 20px;
+}
+
+/* MiniMap y Controles */
+#modulo-diagramas-root .react-flow__minimap {
+  border-radius: 20px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(226, 232, 240, 0.6) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+#modulo-diagramas-root .react-flow__controls {
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #e2e8f0 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+#modulo-diagramas-root .react-flow__handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: #94a3b8 !important;
+  border: 2px solid white !important;
+  transition: all 0.2s ease !important;
+}
+#modulo-diagramas-root .react-flow__handle:hover {
+  background: #3b82f6 !important;
+  transform: scale(1.3) !important;
+}
+
+#modulo-diagramas-root .react-flow__edge-path {
+  stroke-width: 2px !important;
+  transition: all 0.2s ease !important;
+}
+#modulo-diagramas-root .react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3px !important;
+}
+
+/* ==========================================================================
+   MODAL DE AJUSTES
+   ========================================================================== */
+#modulo-diagramas-root .settings-modal {
+  background: white;
+  border-radius: 32px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#modulo-diagramas-root .settings-header {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+#modulo-diagramas-root .settings-body {
+  padding: 24px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+#modulo-diagramas-root .settings-section {
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s;
+}
+#modulo-diagramas-root .settings-section:hover {
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+#modulo-diagramas-root .settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+#modulo-diagramas-root .settings-footer {
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+}
+
+#modulo-diagramas-root .loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+/* ==========================================================================
+   PREGUNTAS - CORRECCIÓN DE DOBLE LÍNEA
+   ========================================================================== */
+#modulo-diagramas-root .react-flow__node-botNode .space-y-3 > div {
+  border-bottom: none !important;
+}
+
+#modulo-diagramas-root .react-flow__node-botNode .question-input-wrapper .single-input-line {
+  border-top: none !important;
+  border-bottom: 1px dashed #cbd5e1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#modulo-diagramas-root .react-flow__node-botNode hr {
+  display: none !important;
+}

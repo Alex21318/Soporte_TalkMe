@@ -1,0 +1,761 @@
+/* ── Panel Tarea Programada ── */
+.ci-tarea-panel {
+  width: 420px;
+  min-width: 380px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 100%;
+  transition: width 0.3s ease, min-width 0.3s ease;
+}
+
+/* Panel expandido cuando se muestra historial */
+.ci-tarea-panel.expandido {
+  width: 820px;
+  min-width: 720px;
+  max-width: 95vw;
+}
+
+/* Header */
+.ci-tarea-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+}
+.ci-tarea-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.ci-tarea-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--tm-primary-500) 0%, var(--tm-primary-600) 100%);
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(var(--tm-primary-rgb-600), 0.3);
+}
+.ci-tarea-icon { 
+  font-size: 18px;
+  filter: grayscale(1) brightness(2);
+}
+.ci-tarea-titulo-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ci-tarea-titulo {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1e293b;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+.ci-tarea-subtitulo {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Tabs - Estilo segmentado profesional */
+.ci-tarea-tabs {
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 10px;
+}
+.ci-tarea-tab {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.ci-tarea-tab.active {
+  background: #fff;
+  color: var(--tm-primary-600);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.ci-tarea-tab:hover:not(.active) { 
+  color: #475569;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Config area */
+.ci-tarea-config {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Field groups - Mejorado */
+.ci-tarea-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ci-tarea-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.ci-tarea-input-hora {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #1e293b;
+  background: #ffffff;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  min-height: 46px;
+  font-weight: 500;
+}
+.ci-tarea-input-hora:focus { 
+  outline: none; 
+  border-color: var(--tm-primary-500); 
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(var(--tm-primary-rgb-500), 0.1);
+}
+
+/* Toggle - Diseño profesional */
+.ci-tarea-toggle-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+.ci-tarea-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ci-tarea-toggle-text strong { 
+  font-size: 14px; 
+  font-weight: 600;
+  color: #1e293b; 
+}
+.ci-tarea-toggle-text span { 
+  font-size: 12px; 
+  color: #64748b; 
+  font-weight: 500;
+}
+.ci-tarea-toggle { 
+  display: flex; 
+  align-items: center; 
+  cursor: pointer;
+  position: relative;
+}
+.ci-tarea-toggle input { display: none; }
+.ci-tarea-toggle-slider {
+  width: 48px; 
+  height: 26px;
+  background: #e2e8f0;
+  border-radius: 13px;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.ci-tarea-toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px; 
+  left: 2px;
+  width: 22px; 
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ci-tarea-toggle input:checked + .ci-tarea-toggle-slider { 
+  background: linear-gradient(135deg, var(--tm-primary-500) 0%, var(--tm-primary-600) 100%);
+}
+.ci-tarea-toggle input:checked + .ci-tarea-toggle-slider::after { 
+  left: 24px;
+  box-shadow: 0 2px 4px rgba(var(--tm-primary-rgb-600), 0.3);
+}
+
+/* Divider */
+.ci-tarea-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 0 -18px;
+}
+
+/* Actions - Diseño profesional con jerarquía */
+.ci-tarea-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Botón primario: Guardar */
+.ci-tarea-btn-save {
+  width: 100%;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--tm-primary-500) 0%, var(--tm-primary-600) 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(var(--tm-primary-rgb-600), 0.2), 0 2px 4px -1px rgba(var(--tm-primary-rgb-600), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.ci-tarea-btn-save:hover:not(:disabled) { 
+  background: linear-gradient(135deg, var(--tm-primary-600) 0%, var(--tm-primary-700) 100%);
+  box-shadow: 0 6px 8px -1px rgba(var(--tm-primary-rgb-600), 0.25), 0 3px 6px -1px rgba(var(--tm-primary-rgb-600), 0.15);
+  transform: translateY(-1px);
+}
+.ci-tarea-btn-save:disabled { 
+  opacity: 0.6; 
+  cursor: not-allowed; 
+  box-shadow: none;
+  transform: none;
+}
+
+/* Contenedor de acciones secundarias */
+.ci-tarea-secondary-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Botón ejecutar ahora */
+.ci-tarea-btn-run {
+  padding: 10px 12px;
+  background: #fff;
+  color: #0ea5e9;
+  border: 1.5px solid #0ea5e9;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.ci-tarea-btn-run:hover:not(:disabled) { 
+  background: #0ea5e9;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
+}
+.ci-tarea-btn-run:disabled { 
+  opacity: 0.5; 
+  cursor: not-allowed;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+}
+
+/* Botón eliminar */
+.ci-tarea-btn-del {
+  padding: 10px 12px;
+  background: #fff;
+  color: #ef4444;
+  border: 1.5px solid #ef4444;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.ci-tarea-btn-del:hover { 
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+/* Status badge - Diseño profesional */
+.ci-tarea-status { 
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+.ci-tarea-badge-on {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #16a34a;
+}
+.ci-tarea-badge-on::before { 
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+}
+.ci-tarea-badge-off {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+.ci-tarea-badge-off::before { 
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: #cbd5e1;
+  border-radius: 50%;
+}
+
+/* ── Indicador de última ejecución ── */
+.ci-tarea-ultimo-log {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-top: 10px;
+}
+.ci-tarea-ultimo-log-loading {
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+}
+.ci-tarea-ultimo-log-none {
+  font-size: 12px;
+  color: #94a3b8;
+}
+.ci-tarea-ultimo-log-badge {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.ci-tarea-ultimo-log-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: #334155;
+}
+.ci-tarea-ultimo-log-text strong {
+  font-weight: 600;
+  color: #1e293b;
+}
+.ci-tarea-ultimo-log-afectados {
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* Log historial - Diseño profesional */
+.ci-tarea-log {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.ci-tarea-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.ci-tarea-log-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ci-tarea-log-count {
+  background: var(--tm-primary-500);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.ci-tarea-log-empty {
+  font-size: 14px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 40px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.ci-tarea-log-empty::before { 
+  content: '📅'; 
+  font-size: 40px; 
+  opacity: 0.4;
+}
+.ci-tarea-log-table-wrap {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ci-tarea-log-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  table-layout: auto;
+}
+.ci-tarea-log-table th {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #475569;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.ci-tarea-log-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ci-tarea-log-table tr:last-child td { border-bottom: none; }
+.ci-tarea-log-table tr:hover td { background: #f8fafc; }
+.ci-tarea-log-table th:nth-child(1), .ci-tarea-log-table td:nth-child(1) { 
+  width: 170px;
+  white-space: nowrap;
+}
+.ci-tarea-log-table th:nth-child(2), .ci-tarea-log-table td:nth-child(2) { 
+  width: auto;
+}
+.ci-tarea-log-table th:nth-child(3), .ci-tarea-log-table td:nth-child(3) { 
+  width: 130px;
+  text-align: center;
+}
+.ci-tarea-ok { 
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ci-tarea-err { 
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ci-tarea-log-error { 
+  color: #dc2626; 
+  font-size: 11px; 
+  font-weight: 500;
+  word-break: break-word;
+  background: #fef2f2;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+.ci-tarea-btn-refresh {
+  align-self: flex-end;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ci-tarea-btn-refresh:hover {
+  background: #f8fafc;
+  color: var(--tm-primary-600);
+  border-color: var(--tm-primary-200);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Botón de detalles en el historial */
+.ci-tarea-btn-detalles {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--tm-primary-500);
+  border-radius: 6px;
+  background: var(--tm-primary-500);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ci-tarea-btn-detalles:hover {
+  background: var(--tm-primary-600);
+  border-color: var(--tm-primary-600);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(var(--tm-primary-rgb-500), 0.3);
+}
+
+/* Sección de detalles expandida */
+.ci-tarea-log-detalles {
+  margin-top: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ci-tarea-log-detalles-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--tm-primary-100);
+  border-bottom: 1px solid var(--tm-primary-200);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tm-primary-700);
+}
+
+.ci-tarea-log-detalles-count {
+  background: var(--tm-primary-500);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.ci-tarea-log-detalles-table {
+  padding: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 360px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+.ci-tarea-log-detalles-table::-webkit-scrollbar { width: 8px; height: 8px; }
+.ci-tarea-log-detalles-table::-webkit-scrollbar-track { background: #f1f5f9; }
+.ci-tarea-log-detalles-table::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.ci-tarea-log-detalles-table::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.ci-tarea-log-detalles-table .ci-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+.ci-tarea-log-detalles-table .ci-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.ci-tarea-log-detalles-table .ci-table th {
+  background: #f1f5f9;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  font-size: 11px;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.ci-tarea-log-detalles-table .ci-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ci-tarea-log-detalles-table .ci-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ci-tarea-log-detalles-table .ci-table tr:hover {
+  background: #f8fafc;
+}
+
+/* Número de fila */
+.ci-row-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 600;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+
+/* Badges y estilos mejorados para historial */
+.ci-badge-afectados {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  min-width: 24px;
+}
+
+.ci-badge-ok {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.ci-text-muted {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.ci-tarea-log-detalles-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Fila activa (expandida) */
+.ci-tarea-log-table tr.fila-activa td {
+  background: var(--tm-primary-50) !important;
+  border-bottom: 1px solid var(--tm-primary-200);
+}
+
+/* Celda de fecha */
+.ci-fecha-cell {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-weight: 500;
+  color: #1e293b;
+  font-size: 12px;
+}
+
+/* Pills de resultado (OK / Error) */
+.ci-resultado-ok-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.ci-resultado-ok-pill strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #059669;
+}
+.ci-resultado-err-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Botón de detalles activo */
+.ci-tarea-btn-detalles.activo {
+  background: var(--tm-primary-600);
+  color: #fff;
+  border-color: var(--tm-primary-700);
+}

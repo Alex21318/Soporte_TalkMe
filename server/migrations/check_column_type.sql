@@ -1,0 +1,15 @@
+-- Verificar el tipo de dato de IMAGEN_FIRMA_PATH
+-- Ejecutar esto en MySQL/MariaDB para verificar si necesitas cambiar el tipo
+
+-- Opción 1: Ver información de la tabla
+DESCRIBE SCHEDULER_EMAIL_TEMPLATES;
+
+-- Opción 2: Ver el tipo específico de la columna
+SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH 
+FROM INFORMATION_SCHEMA.COLUMNS 
+WHERE TABLE_NAME = 'SCHEDULER_EMAIL_TEMPLATES' 
+AND COLUMN_NAME = 'IMAGEN_FIRMA_PATH';
+
+-- Si CHARACTER_MAXIMUM_LENGTH es menor a 65535, necesitas ejecutar:
+-- ALTER TABLE SCHEDULER_EMAIL_TEMPLATES 
+-- MODIFY COLUMN IMAGEN_FIRMA_PATH LONGTEXT NULL;

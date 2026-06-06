@@ -1,0 +1,37 @@
+# TalkMe — Resumen Técnico de Sesión
+
+## 1. Objetivo Actual
+UI/UX and Performance Improvements: optimizar rendimiento, estandarizar UI y refactorizar código crítico del proyecto TalkMe (React + Electron + Express).
+
+## 2. Archivos en los que estamos trabajando
+- `src/hooks/useApi.js` — Hook reutilizable para fetch con AbortController, loading y toast
+- `src/components/NetworkStatus.jsx` — Monitor global de red con interceptor de fetch refactorizado
+- `src/pages/Skills/Skills.jsx` — Memoización de funciones con useCallback, integración de ConfirmModal
+- `src/components/ConfirmModal.jsx` — Componente reutilizable de confirmación
+- `src/components/Sidebar.jsx` — Menú lateral (sin toggle de modo oscuro)
+- `src/components/Sidebar.css` — Estilos del sidebar
+- `src/context/ThemeContext.jsx` — Gestión de temas con persistencia localStorage
+- `src/styles/theme.css` — Variables CSS globales del tema
+- `src/index.css` — Scroll personalizado global y estilos base
+
+## 3. Siguiente Paso Específico
+Todas las mejoras planificadas están completadas. Si se continúa, el siguiente paso sugerido sería:
+- Extraer componentes compartidos adicionales (SearchDropdown, DataTable) en otros módulos
+- Agregar skeleton loaders en módulos restantes (Usuarios, Cierres, etc.)
+
+## 4. Reglas de Estilo y Arquitectura Definidas
+- **APIs centralizadas**: Todas las URLs en `src/config/api.js`
+- **Variables CSS**: Usar `--tm-*` definidas en `src/styles/theme.css` (colores, bordes, sombras, radios)
+- **localStorage keys**: `talkme_theme`, `talkme_theme_custom_color`
+- **useCallback obligatorio**: Funciones que se pasan a `useEffect` o que disparan re-fetches deben memoizarse
+- **useRef para estado mutable en interceptores**: Evita re-registro constante de interceptores (ver `NetworkStatus.jsx`)
+- **AbortError intencional**: Siempre ignorar en catch con `if (err.name === 'AbortError') return;` o helper `esAbortError()`
+- **Modales reutilizables**: Usar `ConfirmModal` en lugar de inline modales duplicados
+- **Scroll global**: Personalizado en `index.css` con variables del tema (`--tm-border-strong`)
+- **NO usar modo oscuro**: Fue revertido a solicitud del usuario. No agregar `data-dark-mode` ni toggle relacionado
+- **Consistencia de iconos**: Usar SVG inline con `currentColor` y clases `nav-icon-svg` / `theme-icon-svg`
+
+## 5. Regla de Documentación Obligatoria (Carpeta Contexto)
+- **Actualización de documentación constante:** Siempre que se añada, elimine o modifique una funcionalidad, vista o lógica de negocio (sea en frontend, backend, base de datos o programadores de tareas), se **DEBE** actualizar inmediatamente la documentación correspondiente en la carpeta `Contexto/`.
+- **Estructura por pantallas:** La documentación técnica de cada pantalla y submenú se separa por carpetas bajo `Contexto/` (ej: `Contexto/Automatizaciones/`). Los cambios deben reflejar el flujo exacto de frontend, las APIs e endpoints implicados y el comportamiento de la base de datos (con transacciones y queries SQL detallados).
+- **Mantener el Índice Actualizado:** El archivo [index.md](file:///d:/Proyectos/Soporte_TalkMe/Contexto/index.md) actúa como mapa de control de funcionalidades. Cualquier nueva pantalla o cambio de estructura debe registrarse allí.

@@ -1,0 +1,361 @@
+/* ============================================================================
+   SISTEMA DE TEMAS - TalkMe Soporte
+   ----------------------------------------------------------------------------
+   Define variables CSS globales para todo el design system.
+   Los temas se aplican cambiando data-theme="..." en <html>.
+   ============================================================================ */
+
+/* ====== TEMA POR DEFECTO: Violeta (Indigo) ====== */
+:root,
+[data-theme="violeta"] {
+  --tm-primary-50:  #eef2ff;
+  --tm-primary-100: #e0e7ff;
+  --tm-primary-200: #c7d2fe;
+  --tm-primary-300: #a5b4fc;
+  --tm-primary-400: #818cf8;
+  --tm-primary-500: #6366f1;
+  --tm-primary-600: #4f46e5;
+  --tm-primary-700: #4338ca;
+  --tm-primary-800: #3730a3;
+  --tm-primary-900: #312e81;
+  --tm-primary-rgb-500: 99, 102, 241;
+  --tm-primary-rgb-600: 79, 70, 229;
+  --tm-primary-rgb-700: 67, 56, 202;
+  --tm-primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --tm-primary-contrast: #ffffff;
+}
+
+[data-theme="azul"] {
+  --tm-primary-50:  #eff6ff;
+  --tm-primary-100: #dbeafe;
+  --tm-primary-200: #bfdbfe;
+  --tm-primary-300: #93c5fd;
+  --tm-primary-400: #60a5fa;
+  --tm-primary-500: #3b82f6;
+  --tm-primary-600: #2563eb;
+  --tm-primary-700: #1d4ed8;
+  --tm-primary-800: #1e40af;
+  --tm-primary-900: #1e3a8a;
+  --tm-primary-gradient: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  --tm-primary-contrast: #ffffff;
+  --tm-primary-rgb-500: 59, 130, 246;
+  --tm-primary-rgb-600: 37, 99, 235;
+  --tm-primary-rgb-700: 29, 78, 216;
+}
+
+[data-theme="verde"] {
+  --tm-primary-50:  #ecfdf5;
+  --tm-primary-100: #d1fae5;
+  --tm-primary-200: #a7f3d0;
+  --tm-primary-300: #6ee7b7;
+  --tm-primary-400: #34d399;
+  --tm-primary-500: #10b981;
+  --tm-primary-600: #059669;
+  --tm-primary-700: #047857;
+  --tm-primary-800: #065f46;
+  --tm-primary-900: #064e3b;
+  --tm-primary-gradient: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  --tm-primary-contrast: #ffffff;
+  --tm-primary-rgb-500: 16, 185, 129;
+  --tm-primary-rgb-600: 5, 150, 105;
+  --tm-primary-rgb-700: 4, 120, 87;
+}
+
+[data-theme="rojo"] {
+  --tm-primary-50:  #fef2f2;
+  --tm-primary-100: #fee2e2;
+  --tm-primary-200: #fecaca;
+  --tm-primary-300: #fca5a5;
+  --tm-primary-400: #f87171;
+  --tm-primary-500: #ef4444;
+  --tm-primary-600: #dc2626;
+  --tm-primary-700: #b91c1c;
+  --tm-primary-800: #991b1b;
+  --tm-primary-900: #7f1d1d;
+  --tm-primary-gradient: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
+  --tm-primary-contrast: #ffffff;
+  --tm-primary-rgb-500: 239, 68, 68;
+  --tm-primary-rgb-600: 220, 38, 38;
+  --tm-primary-rgb-700: 185, 28, 28;
+}
+
+[data-theme="naranja"] {
+  --tm-primary-50:  #fff7ed;
+  --tm-primary-100: #ffedd5;
+  --tm-primary-200: #fed7aa;
+  --tm-primary-300: #fdba74;
+  --tm-primary-400: #fb923c;
+  --tm-primary-500: #f97316;
+  --tm-primary-600: #ea580c;
+  --tm-primary-700: #c2410c;
+  --tm-primary-800: #9a3412;
+  --tm-primary-900: #7c2d12;
+  --tm-primary-gradient: linear-gradient(135deg, #fb923c 0%, #c2410c 100%);
+  --tm-primary-contrast: #ffffff;
+  --tm-primary-rgb-500: 249, 115, 22;
+  --tm-primary-rgb-600: 234, 88, 12;
+  --tm-primary-rgb-700: 194, 65, 12;
+}
+
+[data-theme="rosa"] {
+  --tm-primary-50:  #fdf2f8;
+  --tm-primary-100: #fce7f3;
+  --tm-primary-200: #fbcfe8;
+  --tm-primary-300: #f9a8d4;
+  --tm-primary-400: #f472b6;
+  --tm-primary-500: #ec4899;
+  --tm-primary-600: #db2777;
+  --tm-primary-700: #be185d;
+  --tm-primary-800: #9d174d;
+  --tm-primary-900: #831843;
+  --tm-primary-gradient: linear-gradient(135deg, #ec4899 0%, #9d174d 100%);
+  --tm-primary-contrast: #ffffff;
+  --tm-primary-rgb-500: 236, 72, 153;
+  --tm-primary-rgb-600: 219, 39, 119;
+  --tm-primary-rgb-700: 190, 24, 93;
+}
+
+[data-theme="turquesa"] {
+  --tm-primary-50:  #ecfeff;
+  --tm-primary-100: #cffafe;
+  --tm-primary-200: #a5f3fc;
+  --tm-primary-300: #67e8f9;
+  --tm-primary-400: #22d3ee;
+  --tm-primary-500: #06b6d4;
+  --tm-primary-600: #0891b2;
+  --tm-primary-700: #0e7490;
+  --tm-primary-800: #155e75;
+  --tm-primary-900: #164e63;
+  --tm-primary-gradient: linear-gradient(135deg, #22d3ee 0%, #0e7490 100%);
+  --tm-primary-contrast: #ffffff;
+  --tm-primary-rgb-500: 6, 182, 212;
+  --tm-primary-rgb-600: 8, 145, 178;
+  --tm-primary-rgb-700: 14, 116, 144;
+}
+
+[data-theme="ambar"] {
+  --tm-primary-50:  #fffbeb;
+  --tm-primary-100: #fef3c7;
+  --tm-primary-200: #fde68a;
+  --tm-primary-300: #fcd34d;
+  --tm-primary-400: #fbbf24;
+  --tm-primary-500: #f59e0b;
+  --tm-primary-600: #d97706;
+  --tm-primary-700: #b45309;
+  --tm-primary-800: #92400e;
+  --tm-primary-900: #78350f;
+  --tm-primary-gradient: linear-gradient(135deg, #fbbf24 0%, #b45309 100%);
+  --tm-primary-contrast: #1f2937;
+  --tm-primary-rgb-500: 245, 158, 11;
+  --tm-primary-rgb-600: 217, 119, 6;
+  --tm-primary-rgb-700: 180, 83, 9;
+}
+
+[data-theme="grafito"] {
+  --tm-primary-50:  #f8fafc;
+  --tm-primary-100: #f1f5f9;
+  --tm-primary-200: #e2e8f0;
+  --tm-primary-300: #cbd5e1;
+  --tm-primary-400: #94a3b8;
+  --tm-primary-500: #64748b;
+  --tm-primary-600: #475569;
+  --tm-primary-700: #334155;
+  --tm-primary-800: #1e293b;
+  --tm-primary-900: #0f172a;
+  --tm-primary-gradient: linear-gradient(135deg, #64748b 0%, #1e293b 100%);
+  --tm-primary-contrast: #ffffff;
+  --tm-primary-rgb-500: 100, 116, 139;
+  --tm-primary-rgb-600: 71, 85, 105;
+  --tm-primary-rgb-700: 51, 65, 85;
+}
+
+[data-theme="esmeralda"] {
+  --tm-primary-50:  #f0fdfa;
+  --tm-primary-100: #ccfbf1;
+  --tm-primary-200: #99f6e4;
+  --tm-primary-300: #5eead4;
+  --tm-primary-400: #2dd4bf;
+  --tm-primary-500: #14b8a6;
+  --tm-primary-600: #0d9488;
+  --tm-primary-700: #0f766e;
+  --tm-primary-800: #115e59;
+  --tm-primary-900: #134e4a;
+  --tm-primary-gradient: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
+  --tm-primary-contrast: #ffffff;
+  --tm-primary-rgb-500: 20, 184, 166;
+  --tm-primary-rgb-600: 13, 148, 136;
+  --tm-primary-rgb-700: 15, 118, 110;
+}
+
+[data-theme="purpura"] {
+  --tm-primary-50:  #faf5ff;
+  --tm-primary-100: #f3e8ff;
+  --tm-primary-200: #e9d5ff;
+  --tm-primary-300: #d8b4fe;
+  --tm-primary-400: #c084fc;
+  --tm-primary-500: #a855f7;
+  --tm-primary-600: #9333ea;
+  --tm-primary-700: #7e22ce;
+  --tm-primary-800: #6b21a8;
+  --tm-primary-900: #581c87;
+  --tm-primary-gradient: linear-gradient(135deg, #c084fc 0%, #6b21a8 100%);
+  --tm-primary-contrast: #ffffff;
+  --tm-primary-rgb-500: 168, 85, 247;
+  --tm-primary-rgb-600: 147, 51, 234;
+  --tm-primary-rgb-700: 126, 34, 206;
+}
+
+[data-theme="medianoche"] {
+  --tm-primary-50:  #eff6ff;
+  --tm-primary-100: #dbeafe;
+  --tm-primary-200: #bfdbfe;
+  --tm-primary-300: #60a5fa;
+  --tm-primary-400: #2563eb;
+  --tm-primary-500: #1e40af;
+  --tm-primary-600: #1e3a8a;
+  --tm-primary-700: #172554;
+  --tm-primary-800: #0f172a;
+  --tm-primary-900: #020617;
+  --tm-primary-gradient: linear-gradient(135deg, #1e40af 0%, #020617 100%);
+  --tm-primary-contrast: #ffffff;
+  --tm-primary-rgb-500: 30, 64, 175;
+  --tm-primary-rgb-600: 30, 58, 138;
+  --tm-primary-rgb-700: 23, 37, 84;
+}
+
+/* ====== VARIABLES GLOBALES (compartidas, NO cambian con tema) ====== */
+:root {
+  /* Colores neutros (siempre iguales) */
+  --tm-bg:           #f8fafc;
+  --tm-bg-alt:       #f1f5f9;
+  --tm-surface:      #ffffff;
+  --tm-border:       #e2e8f0;
+  --tm-border-strong:#cbd5e1;
+  --tm-text:         #1e293b;
+  --tm-text-soft:    #475569;
+  --tm-text-muted:   #94a3b8;
+  --tm-text-inverse: #ffffff;
+
+  /* Estados (siempre iguales para consistencia semántica) */
+  --tm-success:      #10b981;
+  --tm-success-soft: #ecfdf5;
+  --tm-warning:      #f59e0b;
+  --tm-warning-soft: #fffbeb;
+  --tm-danger:       #ef4444;
+  --tm-danger-soft:  #fef2f2;
+  --tm-danger-100:   #fee2e2;
+  --tm-danger-600:   #dc2626;
+  --tm-danger-700:   #b91c1c;
+  --tm-info:         #3b82f6;
+  --tm-info-soft:    #eff6ff;
+
+  /* Espaciados */
+  --tm-space-1: 4px;
+  --tm-space-2: 8px;
+  --tm-space-3: 12px;
+  --tm-space-4: 16px;
+  --tm-space-5: 20px;
+  --tm-space-6: 24px;
+  --tm-space-8: 32px;
+
+  /* Bordes redondeados */
+  --tm-radius-sm: 6px;
+  --tm-radius:    10px;
+  --tm-radius-lg: 14px;
+  --tm-radius-xl: 20px;
+  --tm-radius-full: 9999px;
+
+  /* Sombras */
+  --tm-shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --tm-shadow:    0 2px 8px rgba(0,0,0,0.06);
+  --tm-shadow-lg: 0 10px 30px -10px rgba(0,0,0,0.15);
+  --tm-shadow-xl: 0 20px 60px -10px rgba(0,0,0,0.25);
+
+  /* Transiciones */
+  --tm-transition: 0.2s ease;
+  --tm-transition-slow: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Tipografía */
+  --tm-font-xs:   11px;
+  --tm-font-sm:   12px;
+  --tm-font-base: 14px;
+  --tm-font-md:   15px;
+  --tm-font-lg:   17px;
+  --tm-font-xl:   20px;
+}
+
+/* ============================================================================
+   CLASES UTILITARIAS BASADAS EN TEMA
+   Permiten aplicar el tema actual sin reescribir cada módulo.
+   ============================================================================ */
+
+.tm-btn-primary {
+  background: var(--tm-primary-600);
+  color: var(--tm-primary-contrast);
+  border: 1px solid var(--tm-primary-700);
+  padding: 8px 16px;
+  border-radius: var(--tm-radius);
+  font-size: var(--tm-font-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--tm-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tm-btn-primary:hover:not(:disabled) {
+  background: var(--tm-primary-700);
+  transform: translateY(-1px);
+  box-shadow: var(--tm-shadow);
+}
+.tm-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.tm-btn-secondary {
+  background: var(--tm-surface);
+  color: var(--tm-primary-700);
+  border: 1px solid var(--tm-primary-300);
+  padding: 8px 16px;
+  border-radius: var(--tm-radius);
+  font-size: var(--tm-font-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--tm-transition);
+}
+.tm-btn-secondary:hover:not(:disabled) {
+  background: var(--tm-primary-50);
+  border-color: var(--tm-primary-500);
+}
+
+.tm-card {
+  background: var(--tm-surface);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius-lg);
+  box-shadow: var(--tm-shadow);
+  padding: var(--tm-space-4);
+}
+
+.tm-badge-primary {
+  background: var(--tm-primary-100);
+  color: var(--tm-primary-700);
+  padding: 2px 10px;
+  border-radius: var(--tm-radius-full);
+  font-size: var(--tm-font-xs);
+  font-weight: 600;
+}
+
+/* Override de Tailwind base text-color para que no se vea negro en temas oscuros */
+[data-theme] {
+  color: var(--tm-text);
+}
+
+/* ============================================================================
+   TOAST NOTIFICATIONS — forzar visibilidad global
+   ============================================================================ */
+.Toastify__toast-container {
+  z-index: 999999 !important;
+  position: fixed !important;
+}
+.Toastify__toast {
+  z-index: 999999 !important;
+}
+

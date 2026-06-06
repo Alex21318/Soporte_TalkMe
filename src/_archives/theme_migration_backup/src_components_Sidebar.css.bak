@@ -1,0 +1,145 @@
+/* Sidebar con iconos PNG y nombres */
+.sidebar {
+  width: 100px; /* Ancho ajustado para iconos + nombres */
+  background-color: #0f172a;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  border-right: 1px solid #1e293b;
+}
+
+.sidebar-header {
+  padding: 30px 0; /* Padding vertical, centrado horizontal */
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* --- Ajuste de la T para que sea más grande --- */
+.logo-gradient-bg {
+  width: 55px; /* Contenedor más grande que los iconos */
+  height: 55px;
+  /* Degradado sutil y moderno de fondo exclusivo para la T */
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(15, 23, 42, 0) 100%);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.sidebar-logo-img {
+  max-width: 35px; /* La T destaca dentro de su cuadro */
+  height: auto;
+  display: block;
+  /* Sutil sombra para dar volumen a la T */
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 70px;
+  text-decoration: none;
+  color: #94a3b8;
+  border-radius: 12px;
+  transition: all 0.2s ease-out;
+  position: relative;
+  padding: 4px;
+}
+
+/* Iconos PNG */
+.nav-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  margin-bottom: 4px;
+  transition: transform 0.2s ease;
+}
+
+.nav-item:hover .nav-icon {
+  transform: scale(1.1);
+}
+
+/* Texto del menú */
+.nav-text {
+  font-size: 10px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 70px;
+  word-wrap: break-word;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.03); /* Hover sutil */
+  color: #ffffff;
+  transform: translateY(-2px); /* Pequeña animación física */
+}
+
+/* Estado Activo */
+.nav-item.active {
+  background-color: #6366f1;
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.nav-item.active .nav-icon {
+  filter: brightness(1.2);
+}
+
+.sidebar-cola {
+  padding: 10px 0;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid #1e293b;
+}
+
+.sidebar-footer {
+  padding: 20px 0;
+  border-top: 1px solid #1e293b;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-logout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 56px;
+  background-color: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px;
+}
+
+.btn-logout .nav-text {
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.btn-logout:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  transform: translateY(-2px);
+}

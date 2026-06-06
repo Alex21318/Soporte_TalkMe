@@ -1,0 +1,26 @@
+{
+  "hora": "09:30",
+  "activo": true,
+  "reportes": {
+    "grupoq": {
+      "activo": true,
+      "carpeta": "C:\\Users\\hp\\Desktop\\Reportes Mensuales\\Rep. Operaciones Grupo Q",
+      "db_key": "db_2",
+      "id_empresa": "213"
+    },
+    "operaciones_ficohsa": {
+      "activo": true,
+      "carpeta": "C:\\Users\\hp\\Desktop\\Reportes Mensuales\\Rep. Operaciones y resoluciones Ficohsa Comercial",
+      "db_key": "db_8",
+      "id_empresa": "4",
+      "tipo": "detallado"
+    },
+    "resoluciones_ficohsa": {
+      "activo": true,
+      "carpeta": "C:\\Users\\hp\\Desktop\\Reportes Mensuales\\Rep. Operaciones y resoluciones Ficohsa Comercial",
+      "db_key": "db_8",
+      "id_empresa": "4",
+      "tipo": "resumido"
+    }
+  }
+}
