@@ -12,9 +12,9 @@ require('dotenv').config({
 const dbOptions = {
     waitForConnections: true,
     connectionLimit: 10,
-    dateStrings: true, 
+    dateStrings: true,
     timezone: '-06:00',
-    multipleStatements: true,
+    multipleStatements: false, // Deshabilitado por seguridad (previene SQL injection)
     charset: 'utf8mb4',
     connectTimeout: 10000
 };

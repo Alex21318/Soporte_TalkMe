@@ -59,9 +59,9 @@ function Login({ onLoginSuccess }) {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Cargar usuario recordado al montar
+  // Cargar usuario recordado al montar (usar sessionStorage por seguridad)
   useEffect(() => {
-    const rememberedUser = localStorage.getItem('remembered_user');
+    const rememberedUser = sessionStorage.getItem('remembered_user');
     if (rememberedUser) {
       setFormData(prev => ({ ...prev, usuario: rememberedUser, rememberMe: true }));
     }
@@ -115,11 +115,16 @@ function Login({ onLoginSuccess }) {
       sessionStorage.setItem('auth_token', data.token);
       sessionStorage.setItem('user_info', JSON.stringify(data.user));
 
-      // Manejar "Recordarme"
+      // Guardar permisos
+      if (data.user.permissions) {
+        sessionStorage.setItem('user_permissions', JSON.stringify(data.user.permissions));
+      }
+
+      // Manejar "Recordarme" (usar sessionStorage por seguridad)
       if (formData.rememberMe) {
-        localStorage.setItem('remembered_user', formData.usuario.trim());
+        sessionStorage.setItem('remembered_user', formData.usuario.trim());
       } else {
-        localStorage.removeItem('remembered_user');
+        sessionStorage.removeItem('remembered_user');
       }
 
       // Notificar éxito

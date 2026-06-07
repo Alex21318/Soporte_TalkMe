@@ -3,8 +3,6 @@ import { createPortal } from 'react-dom';
 import { toast } from 'react-toastify';
 import { API_URLS } from '../../config/api';
 import { fetchWithAuth } from '../../utils/fetchWithAuth';
-import Auditoria from '../Auditoria/Auditoria';
-import ContenidoConfiguraciones from './ContenidoConfiguraciones';
 import ContenidoPlantillasWhatsApp from './ContenidoPlantillasWhatsApp';
 import { ICONOS_MENU } from '../../components/MenuIcons';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -35,8 +33,6 @@ const SIDEBAR_ITEMS = [
   { id: 'tags',           label: 'Tags Bot',        desc: 'Validar palabras' },
   { id: 'plantillas_wa',  label: 'Plantillas WA',   desc: 'Plantillas WhatsApp' },
   { id: 'reportes_auto',  label: 'Reportes Auto',   desc: 'Descarga programada' },
-  { id: 'auditoria',      label: 'Auditoría',       desc: 'Logs del sistema' },
-  { id: 'configuraciones',label: 'Configuraciones', desc: 'Tema y apariencia' },
 ];
 
 // ── Panel: Tarea Programada (reutilizable para Cierres y Facebook) ────────────
@@ -1265,10 +1261,6 @@ function Cierres() {
               <ContenidoReportesAuto />
             )}
 
-            {seccion === 'auditoria' && <Auditoria />}
-
-            {seccion === 'configuraciones' && <ContenidoConfiguraciones />}
-
 {seccion === 'plantillas_wa' && (
               <ContenidoPlantillasWhatsApp 
                 plantillas={plantillasData} 
@@ -1307,9 +1299,8 @@ const FORMATO_BADGE = { xlsx: { label: 'XLSX', cls: 'ci-ra-badge-xlsx' }, csv: {
 // Helper: invocar dialog de carpeta via IPC (solo en Electron)
 async function elegirCarpeta() {
   try {
-    const { ipcRenderer } = window.require('electron');
-    const resultado = await ipcRenderer.invoke('seleccionar-carpeta');
-    return resultado || null;
+    const resultado = await window.electronAPI.selectFolder();
+    return resultado;
   } catch {
     return null;
   }

@@ -12,9 +12,25 @@ const pools = require('./db');
 const router = express.Router();
 
 // Clave secreta para JWT (debe estar en .env)
-const JWT_SECRET = process.env.JWT_SECRET || 'tu-clave-secreta-muy-larga-aqui-minimo-32-caracteres';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET es requerido en .env. Genere uno con: openssl rand -hex 32');
+}
 const TOKEN_EXPIRY = '8h'; // Token válido por 8 horas
 const SALT_ROUNDS = 12; // Número de rounds para bcrypt (más alto = más seguro pero más lento)
+
+// Blacklist de tokens para logout (en producción usar Redis)
+const tokenBlacklist = new Map();
+
+// Limpiar tokens expirados de la blacklist cada 5 minutos
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, data] of tokenBlacklist.entries()) {
+    if (now > data.expiresAt) {
+      tokenBlacklist.delete(token);
+    }
+  }
+}, 5 * 60 * 1000); // 5 minutos
 
 // ==========================================
 // UTILIDADES
@@ -43,20 +59,31 @@ const generateToken = (payload) => {
 // Verificar token JWT
 const verifyToken = (token) => {
     try {
+        // Verificar blacklist primero
+        if (tokenBlacklist.has(token)) {
+            const data = tokenBlacklist.get(token);
+            if (Date.now() < data.expiresAt) {
+                return null; // Token revocado
+            } else {
+                // Token expirado en blacklist, removerlo
+                tokenBlacklist.delete(token);
+            }
+        }
+
         const [header, body, signature] = token.split('.');
         const expectedSignature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
-        
+
         if (signature !== expectedSignature) {
             return null;
         }
-        
+
         const payload = JSON.parse(Buffer.from(body, 'base64url').toString());
         const now = Math.floor(Date.now() / 1000);
-        
+
         if (payload.exp < now) {
             return null; // Token expirado
         }
-        
+
         return payload;
     } catch (error) {
         return null;
@@ -67,34 +94,105 @@ const verifyToken = (token) => {
 const authMiddleware = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        
+
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({ error: 'Token de autenticación requerido' });
         }
-        
+
         const token = authHeader.substring(7);
         const payload = verifyToken(token);
-        
+
         if (!payload) {
             return res.status(401).json({ error: 'Token inválido o expirado' });
         }
-        
+
         // Verificar que el usuario sigue existiendo y activo
         const dbControl = pools['control'];
         const [users] = await dbControl.query(
-            'SELECT id, usuario, nombre, activo FROM USUARIOS_SISTEMA WHERE id = ? AND activo = 1',
+            'SELECT id, usuario, nombre, activo, rol_id FROM USUARIOS_SISTEMA WHERE id = ? AND activo = 1',
             [payload.userId]
         );
-        
+
         if (users.length === 0) {
             return res.status(401).json({ error: 'Usuario no encontrado o inactivo' });
         }
-        
+
         req.user = users[0];
         next();
     } catch (error) {
         console.error('Error en auth middleware:', error);
         res.status(500).json({ error: 'Error de autenticación' });
+    }
+};
+
+// Middleware de autorización por permiso
+const requirePermission = (modulo, accion) => {
+    return async (req, res, next) => {
+        try {
+            const dbControl = pools['control'];
+
+            // Verificar permisos del rol
+            let tienePermisoRol = false;
+            if (req.user.rol_id) {
+                const [permisosRol] = await dbControl.query(`
+                    SELECT COUNT(*) as tiene_permiso
+                    FROM ROL_PERMISOS rp
+                    INNER JOIN PERMISOS p ON rp.permiso_id = p.id
+                    WHERE rp.rol_id = ? AND p.modulo = ? AND p.accion = ?
+                `, [req.user.rol_id, modulo, accion]);
+                tienePermisoRol = permisosRol[0].tiene_permiso > 0;
+            }
+
+            // Verificar permisos individuales del usuario (con try-catch por si la tabla no existe)
+            let tienePermisoUsuario = false;
+            try {
+                const [permisosUsuario] = await dbControl.query(`
+                    SELECT COUNT(*) as tiene_permiso
+                    FROM USUARIO_PERMISOS up
+                    INNER JOIN PERMISOS p ON up.permiso_id = p.id
+                    WHERE up.usuario_id = ? AND p.modulo = ? AND p.accion = ?
+                `, [req.user.id, modulo, accion]);
+                tienePermisoUsuario = permisosUsuario[0].tiene_permiso > 0;
+            } catch (error) {
+                console.log('[AUTH] Tabla USUARIO_PERMISOS no existe o error:', error.message);
+                // Si la tabla no existe, continuar sin permisos individuales
+            }
+
+            // Tiene permiso si lo tiene por rol o individualmente
+            if (!tienePermisoRol && !tienePermisoUsuario) {
+                return res.status(403).json({ error: 'No tiene permisos para realizar esta acción' });
+            }
+
+            next();
+        } catch (error) {
+            console.error('Error en autorización:', error);
+            res.status(500).json({ error: 'Error al verificar permisos' });
+        }
+    };
+};
+
+// Middleware para obtener permisos del usuario (opcional, para frontend)
+const getUserPermissions = async (req, res, next) => {
+    try {
+        if (!req.user.rol_id) {
+            req.user.permissions = [];
+            return next();
+        }
+
+        const dbControl = pools['control'];
+        const [permisos] = await dbControl.query(`
+            SELECT p.modulo, p.accion
+            FROM ROL_PERMISOS rp
+            INNER JOIN PERMISOS p ON rp.permiso_id = p.id
+            WHERE rp.rol_id = ?
+        `, [req.user.rol_id]);
+
+        req.user.permissions = permisos.map(p => `${p.modulo}:${p.accion}`);
+        next();
+    } catch (error) {
+        console.error('Error al obtener permisos:', error);
+        req.user.permissions = [];
+        next();
     }
 };
 
@@ -119,7 +217,7 @@ router.post('/api/auth/login', async (req, res) => {
 
         // Buscar usuario
         const [users] = await dbControl.query(
-            'SELECT id, usuario, nombre, password_hash, activo, ultimo_acceso FROM USUARIOS_SISTEMA WHERE usuario = ?',
+            'SELECT id, usuario, nombre, password_hash, activo, rol_id, ultimo_acceso, intentos_fallidos, ultimo_intento_fallido FROM USUARIOS_SISTEMA WHERE usuario = ?',
             [usuarioClean]
         );
 
@@ -136,21 +234,44 @@ router.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Usuario inactivo. Contacte al administrador.' });
         }
 
+        // Verificar bloqueo por demasiados intentos fallidos (5 intentos en 15 minutos)
+        const MAX_FAILED_ATTEMPTS = 5;
+        const LOCKOUT_TIME_MS = 15 * 60 * 1000; // 15 minutos
+
+        if (user.intentos_fallidos >= MAX_FAILED_ATTEMPTS && user.ultimo_intento_fallido) {
+            const tiempoBloqueo = user.ultimo_intento_fallido.getTime() + LOCKOUT_TIME_MS;
+            if (Date.now() < tiempoBloqueo) {
+                const minutosRestantes = Math.ceil((tiempoBloqueo - Date.now()) / 60000);
+                return res.status(429).json({
+                    error: `Cuenta bloqueada temporalmente por demasiados intentos. Intente en ${minutosRestantes} minutos.`
+                });
+            }
+        }
+
         // Verificar contraseña con bcrypt
         const passwordValid = await verifyPassword(password, user.password_hash);
 
         if (!passwordValid) {
             // Registrar intento fallido
+            const nuevoIntento = (user.intentos_fallidos || 0) + 1;
             await dbControl.query(
-                'UPDATE USUARIOS_SISTEMA SET intentos_fallidos = intentos_fallidos + 1 WHERE id = ?',
-                [user.id]
+                'UPDATE USUARIOS_SISTEMA SET intentos_fallidos = ?, ultimo_intento_fallido = NOW() WHERE id = ?',
+                [nuevoIntento, user.id]
             );
+
+            // Si alcanzó el máximo de intentos, informar al usuario
+            if (nuevoIntento >= MAX_FAILED_ATTEMPTS) {
+                return res.status(429).json({
+                    error: 'Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos.'
+                });
+            }
+
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
         // Resetear intentos fallidos y actualizar último acceso
         await dbControl.query(
-            'UPDATE USUARIOS_SISTEMA SET intentos_fallidos = 0, ultimo_acceso = NOW() WHERE id = ?',
+            'UPDATE USUARIOS_SISTEMA SET intentos_fallidos = 0, ultimo_intento_fallido = NULL, ultimo_acceso = NOW() WHERE id = ?',
             [user.id]
         );
 
@@ -161,13 +282,56 @@ router.post('/api/auth/login', async (req, res) => {
             nombre: user.nombre
         });
 
+        console.log('[LOGIN] Usuario:', user.usuario, 'rol_id:', user.rol_id);
+
+        // Obtener permisos del usuario (rol + individuales)
+        let permissions = [];
+        if (user.rol_id) {
+            const [permisosRol] = await dbControl.query(`
+                SELECT p.modulo, p.accion
+                FROM ROL_PERMISOS rp
+                INNER JOIN PERMISOS p ON rp.permiso_id = p.id
+                WHERE rp.rol_id = ?
+            `, [user.rol_id]);
+            console.log('[LOGIN] Permisos del rol:', permisosRol);
+            permissions = permisosRol.map(p => `${p.modulo}:${p.accion}`);
+        }
+
+        // Obtener permisos individuales del usuario (con try-catch por si la tabla no existe)
+        let permisosIndividuales = [];
+        try {
+            const [permisosIndividualesResult] = await dbControl.query(`
+                SELECT p.modulo, p.accion
+                FROM USUARIO_PERMISOS up
+                INNER JOIN PERMISOS p ON up.permiso_id = p.id
+                WHERE up.usuario_id = ?
+            `, [user.id]);
+            permisosIndividuales = permisosIndividualesResult;
+            console.log('[LOGIN] Permisos individuales:', permisosIndividuales);
+        } catch (error) {
+            console.log('[LOGIN] Tabla USUARIO_PERMISOS no existe o error:', error.message);
+            // Si la tabla no existe, continuar sin permisos individuales
+        }
+
+        const permisosIndividualesFormat = permisosIndividuales.map(p => `${p.modulo}:${p.accion}`);
+
+        // Combinar permisos (individuales sobrescriben los del rol)
+        const permisosMap = new Map();
+        permissions.forEach(p => permisosMap.set(p, p));
+        permisosIndividualesFormat.forEach(p => permisosMap.set(p, p));
+
+        const finalPermissions = Array.from(permisosMap.values());
+        console.log('[LOGIN] Permisos finales:', finalPermissions);
+
         res.json({
             success: true,
             token,
             user: {
                 id: user.id,
                 usuario: user.usuario,
-                nombre: user.nombre
+                nombre: user.nombre,
+                rolId: user.rol_id,
+                permissions: finalPermissions
             }
         });
 
@@ -179,21 +343,89 @@ router.post('/api/auth/login', async (req, res) => {
 
 // VERIFICAR TOKEN (para validar sesión al cargar la app)
 router.get('/api/auth/verify', authMiddleware, async (req, res) => {
-    res.json({
-        success: true,
-        user: {
-            id: req.user.id,
-            usuario: req.user.usuario,
-            nombre: req.user.nombre
+    try {
+        const dbControl = pools['control'];
+
+        // Obtener permisos del usuario (rol + individuales)
+        let permissions = [];
+        if (req.user.rol_id) {
+            const [permisosRol] = await dbControl.query(`
+                SELECT p.modulo, p.accion
+                FROM ROL_PERMISOS rp
+                INNER JOIN PERMISOS p ON rp.permiso_id = p.id
+                WHERE rp.rol_id = ?
+            `, [req.user.rol_id]);
+            permissions = permisosRol.map(p => `${p.modulo}:${p.accion}`);
         }
-    });
+
+        // Obtener permisos individuales del usuario (con try-catch por si la tabla no existe)
+        let permisosIndividuales = [];
+        try {
+            const [permisosIndividualesResult] = await dbControl.query(`
+                SELECT p.modulo, p.accion
+                FROM USUARIO_PERMISOS up
+                INNER JOIN PERMISOS p ON up.permiso_id = p.id
+                WHERE up.usuario_id = ?
+            `, [req.user.id]);
+            permisosIndividuales = permisosIndividualesResult;
+        } catch (error) {
+            console.log('[VERIFY] Tabla USUARIO_PERMISOS no existe o error:', error.message);
+            // Si la tabla no existe, continuar sin permisos individuales
+        }
+
+        const permisosIndividualesFormat = permisosIndividuales.map(p => `${p.modulo}:${p.accion}`);
+
+        // Combinar permisos (individuales sobrescriben los del rol)
+        const permisosMap = new Map();
+        permissions.forEach(p => permisosMap.set(p, p));
+        permisosIndividualesFormat.forEach(p => permisosMap.set(p, p));
+
+        res.json({
+            success: true,
+            user: {
+                id: req.user.id,
+                usuario: req.user.usuario,
+                nombre: req.user.nombre,
+                rolId: req.user.rol_id,
+                permissions: Array.from(permisosMap.values())
+            }
+        });
+    } catch (error) {
+        console.error('Error en verify:', error);
+        res.status(500).json({ error: 'Error al verificar sesión' });
+    }
 });
 
-// LOGOUT (en el cliente se elimina el token, aquí podríamos invalidar en blacklist si fuera necesario)
+// LOGOUT (invalidar token en blacklist)
 router.post('/api/auth/logout', authMiddleware, async (req, res) => {
-    // Aquí se podría agregar el token a una blacklist si se implementa
-    res.json({ success: true, message: 'Sesión cerrada correctamente' });
+    try {
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.substring(7);
+            const payload = verifyToken(token);
+
+            if (payload) {
+                // Agregar a blacklist hasta su expiración original
+                tokenBlacklist.set(token, {
+                    expiresAt: payload.exp * 1000,
+                    userId: payload.userId
+                });
+            }
+        }
+
+        res.json({ success: true, message: 'Sesión cerrada correctamente' });
+    } catch (error) {
+        console.error('Error en logout:', error);
+        res.status(500).json({ error: 'Error al cerrar sesión' });
+    }
 });
+
+// Validador de fortaleza de contraseña
+const validatePasswordStrength = (password) => {
+    // Mínimo 12 caracteres, al menos una mayúscula, una minúscula, un número y un símbolo
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
+    return passwordRegex.test(password);
+};
 
 // CAMBIAR CONTRASEÑA
 router.post('/api/auth/cambiar-password', authMiddleware, async (req, res) => {
@@ -203,8 +435,10 @@ router.post('/api/auth/cambiar-password', authMiddleware, async (req, res) => {
         return res.status(400).json({ error: 'Contraseña actual y nueva son requeridas' });
     }
 
-    if (passwordNuevo.length < 6) {
-        return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    if (!validatePasswordStrength(passwordNuevo)) {
+        return res.status(400).json({ 
+            error: 'La contraseña debe tener al menos 12 caracteres, incluyendo mayúsculas, minúsculas, números y símbolos (@$!%*?&)' 
+        });
     }
 
     try {
@@ -272,8 +506,10 @@ router.post('/api/auth/init-admin', async (req, res) => {
         return res.status(400).json({ error: 'Usuario, contraseña y nombre son requeridos' });
     }
 
-    if (password.length < 6) {
-        return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    if (!validatePasswordStrength(password)) {
+        return res.status(400).json({ 
+            error: 'La contraseña debe tener al menos 12 caracteres, incluyendo mayúsculas, minúsculas, números y símbolos (@$!%*?&)' 
+        });
     }
 
     try {
@@ -349,8 +585,10 @@ router.post('/api/auth/users', authMiddleware, async (req, res) => {
         return res.status(400).json({ error: 'Usuario, contraseña y nombre son requeridos' });
     }
 
-    if (password.length < 6) {
-        return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    if (!validatePasswordStrength(password)) {
+        return res.status(400).json({ 
+            error: 'La contraseña debe tener al menos 12 caracteres, incluyendo mayúsculas, minúsculas, números y símbolos (@$!%*?&)' 
+        });
     }
 
     try {
@@ -430,8 +668,10 @@ router.put('/api/auth/users/:id/password', authMiddleware, async (req, res) => {
         return res.status(400).json({ error: 'La contraseña es requerida' });
     }
 
-    if (password.length < 6) {
-        return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    if (!validatePasswordStrength(password)) {
+        return res.status(400).json({ 
+            error: 'La contraseña debe tener al menos 12 caracteres, incluyendo mayúsculas, minúsculas, números y símbolos (@$!%*?&)' 
+        });
     }
 
     try {
@@ -460,4 +700,238 @@ router.put('/api/auth/users/:id/password', authMiddleware, async (req, res) => {
     }
 });
 
-module.exports = { router, authMiddleware };
+// ==========================================
+// ENDPOINTS DE GESTIÓN DE ROLES Y PERMISOS
+// ==========================================
+
+// Obtener todos los roles
+router.get('/api/auth/roles', authMiddleware, async (req, res) => {
+    try {
+        const dbControl = pools['control'];
+        const [roles] = await dbControl.query(`
+            SELECT r.id, r.nombre, r.descripcion, r.creado_el,
+                   COUNT(rp.id) as cantidad_permisos
+            FROM ROLES r
+            LEFT JOIN ROL_PERMISOS rp ON r.id = rp.rol_id
+            GROUP BY r.id
+            ORDER BY r.nombre
+        `);
+        res.json(roles);
+    } catch (error) {
+        console.error('Error obteniendo roles:', error);
+        res.status(500).json({ error: 'Error al obtener roles' });
+    }
+});
+
+// Obtener todos los permisos
+router.get('/api/auth/permisos', authMiddleware, async (req, res) => {
+    try {
+        const dbControl = pools['control'];
+        const [permisos] = await dbControl.query(`
+            SELECT p.id, p.modulo, p.accion, p.descripcion
+            FROM PERMISOS p
+            ORDER BY p.modulo, p.accion
+        `);
+        res.json(permisos);
+    } catch (error) {
+        console.error('Error obteniendo permisos:', error);
+        res.status(500).json({ error: 'Error al obtener permisos' });
+    }
+});
+
+// Obtener permisos de un rol específico
+router.get('/api/auth/roles/:id/permisos', authMiddleware, async (req, res) => {
+    try {
+        const dbControl = pools['control'];
+        const [permisos] = await dbControl.query(`
+            SELECT p.id, p.modulo, p.accion, p.descripcion
+            FROM ROL_PERMISOS rp
+            INNER JOIN PERMISOS p ON rp.permiso_id = p.id
+            WHERE rp.rol_id = ?
+            ORDER BY p.modulo, p.accion
+        `, [req.params.id]);
+        res.json(permisos);
+    } catch (error) {
+        console.error('Error obteniendo permisos del rol:', error);
+        res.status(500).json({ error: 'Error al obtener permisos del rol' });
+    }
+});
+
+// Asignar permisos a un rol
+router.post('/api/auth/roles/:id/permisos', authMiddleware, async (req, res) => {
+    try {
+        const { permisoIds } = req.body;
+        if (!Array.isArray(permisoIds)) {
+            return res.status(400).json({ error: 'permisoIds debe ser un array' });
+        }
+
+        const dbControl = pools['control'];
+        const rolId = req.params.id;
+
+        // Eliminar permisos actuales del rol
+        await dbControl.query('DELETE FROM ROL_PERMISOS WHERE rol_id = ?', [rolId]);
+
+        // Insertar nuevos permisos
+        if (permisoIds.length > 0) {
+            const values = permisoIds.map(permisoId => `(${rolId}, ${permisoId})`).join(',');
+            await dbControl.query(`INSERT INTO ROL_PERMISOS (rol_id, permiso_id) VALUES ${values}`);
+        }
+
+        res.json({ success: true, message: 'Permisos actualizados correctamente' });
+    } catch (error) {
+        console.error('Error actualizando permisos del rol:', error);
+        res.status(500).json({ error: 'Error al actualizar permisos del rol' });
+    }
+});
+
+// Obtener permisos de un usuario específico (combina permisos del rol + permisos individuales)
+router.get('/api/auth/users/:id/permisos', authMiddleware, async (req, res) => {
+    try {
+        const dbControl = pools['control'];
+        const usuarioId = req.params.id;
+
+        console.log('[USUARIOS] Obteniendo permisos para usuario ID:', usuarioId);
+
+        // Obtener permisos del rol del usuario
+        const [usuario] = await dbControl.query(
+            'SELECT rol_id FROM USUARIOS_SISTEMA WHERE id = ?',
+            [usuarioId]
+        );
+
+        console.log('[USUARIOS] Usuario:', usuario);
+        console.log('[USUARIOS] Usuario[0]:', usuario[0]);
+
+        let permisosRol = [];
+        if (usuario && usuario[0] && usuario[0].rol_id) {
+            const [permisos] = await dbControl.query(`
+                SELECT p.*
+                FROM PERMISOS p
+                INNER JOIN ROL_PERMISOS rp ON p.id = rp.permiso_id
+                WHERE rp.rol_id = ?
+            `, [usuario[0].rol_id]);
+            permisosRol = permisos;
+            console.log('[USUARIOS] Permisos del rol:', permisosRol.length);
+        }
+
+        // Obtener permisos individuales del usuario (con try-catch por si la tabla no existe)
+        let permisosIndividuales = [];
+        try {
+            const [permisosIndividualesResult] = await dbControl.query(`
+                SELECT p.*
+                FROM PERMISOS p
+                INNER JOIN USUARIO_PERMISOS up ON p.id = up.permiso_id
+                WHERE up.usuario_id = ?
+            `, [usuarioId]);
+            permisosIndividuales = permisosIndividualesResult;
+            console.log('[USUARIOS] Permisos individuales:', permisosIndividuales.length);
+        } catch (error) {
+            console.log('[USUARIOS] Tabla USUARIO_PERMISOS no existe o error:', error.message);
+            // Si la tabla no existe, continuar sin permisos individuales
+        }
+
+        // Combinar permisos (prioridad a individuales sobre los del rol)
+        const permisosMap = new Map();
+
+        // Primero agregar permisos del rol
+        permisosRol.forEach(p => permisosMap.set(p.id, p));
+
+        // Luego sobrescribir con permisos individuales
+        permisosIndividuales.forEach(p => permisosMap.set(p.id, p));
+
+        const finalPermisos = Array.from(permisosMap.values());
+        console.log('[USUARIOS] Permisos finales:', finalPermisos.length);
+
+        res.json(finalPermisos);
+    } catch (error) {
+        console.error('Error obteniendo permisos del usuario:', error);
+        res.status(500).json({ error: 'Error al obtener permisos del usuario' });
+    }
+});
+
+// Asignar permisos directos a un usuario (sobrescribe permisos del rol)
+router.post('/api/auth/users/:id/permisos', authMiddleware, async (req, res) => {
+    try {
+        const { permisoIds } = req.body;
+        if (!Array.isArray(permisoIds)) {
+            return res.status(400).json({ error: 'permisoIds debe ser un array' });
+        }
+
+        const dbControl = pools['control'];
+        const usuarioId = req.params.id;
+
+        // Eliminar permisos directos actuales del usuario
+        await dbControl.query('DELETE FROM USUARIO_PERMISOS WHERE usuario_id = ?', [usuarioId]);
+
+        // Insertar nuevos permisos directos
+        if (permisoIds.length > 0) {
+            const values = permisoIds.map(permisoId => `(${usuarioId}, ${permisoId})`).join(',');
+            await dbControl.query(`INSERT INTO USUARIO_PERMISOS (usuario_id, permiso_id) VALUES ${values}`);
+        }
+
+        res.json({ success: true, message: 'Permisos del usuario actualizados correctamente' });
+    } catch (error) {
+        console.error('Error actualizando permisos del usuario:', error);
+        res.status(500).json({ error: 'Error al actualizar permisos del usuario' });
+    }
+});
+
+// Crear nuevo rol
+router.post('/api/auth/roles', authMiddleware, async (req, res) => {
+    try {
+        const { nombre, descripcion } = req.body;
+        if (!nombre || !nombre.trim()) {
+            return res.status(400).json({ error: 'El nombre del rol es requerido' });
+        }
+
+        const dbControl = pools['control'];
+        const [result] = await dbControl.query(
+            'INSERT INTO ROLES (nombre, descripcion) VALUES (?, ?)',
+            [nombre.trim(), descripcion || null]
+        );
+
+        res.json({ success: true, id: result.insertId, message: 'Rol creado correctamente' });
+    } catch (error) {
+        console.error('Error creando rol:', error);
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ error: 'Ya existe un rol con ese nombre' });
+        }
+        res.status(500).json({ error: 'Error al crear rol' });
+    }
+});
+
+// Actualizar rol de usuario
+router.put('/api/auth/users/:id/rol', authMiddleware, async (req, res) => {
+    try {
+        const { rolId } = req.body;
+        const userId = req.params.id;
+
+        const dbControl = pools['control'];
+        await dbControl.query(
+            'UPDATE USUARIOS_SISTEMA SET rol_id = ? WHERE id = ?',
+            [rolId || null, userId]
+        );
+
+        res.json({ success: true, message: 'Rol actualizado correctamente' });
+    } catch (error) {
+        console.error('Error actualizando rol de usuario:', error);
+        res.status(500).json({ error: 'Error al actualizar rol de usuario' });
+    }
+});
+
+// Listar usuarios (para gestión de roles)
+router.get('/api/auth/users', authMiddleware, async (req, res) => {
+    try {
+        const dbControl = pools['control'];
+        const [users] = await dbControl.query(`
+            SELECT id, usuario, nombre, rol_id, activo
+            FROM USUARIOS_SISTEMA
+            ORDER BY nombre
+        `);
+        res.json(users);
+    } catch (error) {
+        console.error('Error obteniendo usuarios:', error);
+        res.status(500).json({ error: 'Error al obtener usuarios' });
+    }
+});
+
+module.exports = { router, authMiddleware, requirePermission, getUserPermissions };

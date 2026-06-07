@@ -38,9 +38,8 @@ const FORMATO_BADGE = { xlsx: { label: 'XLSX', cls: 'ci-ra-badge-xlsx' }, csv: {
 // Helper: invocar dialog de carpeta via IPC (solo en Electron)
 async function elegirCarpeta() {
   try {
-    const { ipcRenderer } = window.require('electron');
-    const resultado = await ipcRenderer.invoke('seleccionar-carpeta');
-    return resultado || null;
+    const resultado = await window.electronAPI.selectFolder();
+    return resultado;
   } catch {
     return null;
   }

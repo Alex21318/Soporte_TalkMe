@@ -7,7 +7,6 @@ import { logPermisoAgregado, logPermisoEliminado, logPermisoMasivo } from '../..
 import AHistorialEstados from './aHistorialEstados';
 import { SeguridadModal, GestionMasivaPermisos, ContenidoSeguridad } from './aSeguridad';
 import UsuariosQRM from './UsuariosQRM';
-import SistemaUsuarios from './SistemaUsuarios';
 import ConfirmModal from '../../components/ConfirmModal';
 import './Usuarios.css';
 
@@ -1707,19 +1706,6 @@ function Usuarios() {
       )
     },
     { 
-      id: 'sistema', 
-      label: 'Usuarios Sistema', 
-      desc: 'Gestión de usuarios del sistema', 
-      icon: (
-        <svg className="nav-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-      )
-    },
-    { 
       id: 'historial', 
       label: 'Historial', 
       desc: 'Estados de usuarios', 
@@ -1762,8 +1748,8 @@ function Usuarios() {
 
         {/* Filtros inline con etiquetas */}
         <div className="usr-topbar-filters">
-          {/* Filtros compartidos (ocultos en seguridad y sistema) */}
-          {vistaActiva !== 'seguridad' && vistaActiva !== 'sistema' && (
+          {/* Filtros compartidos (ocultos en seguridad) */}
+          {vistaActiva !== 'seguridad' && (
             <>
               <div className="usr-topbar-field">
                 <span className="usr-topbar-label">Base de Datos</span>
@@ -3080,8 +3066,8 @@ function Usuarios() {
 
         {/* CONTENT */}
         <div className="usr-content">
-          {/* PANTALLA DE BIENVENIDA - cuando no hay empresa seleccionada y NO es historial, seguridad ni sistema */}
-          {!filtros.id_empresa && vistaActiva !== 'historial' && vistaActiva !== 'seguridad' && vistaActiva !== 'sistema' && (
+          {/* PANTALLA DE BIENVENIDA - cuando no hay empresa seleccionada y NO es historial ni seguridad */}
+          {!filtros.id_empresa && vistaActiva !== 'historial' && vistaActiva !== 'seguridad' && (
             <div className="usr-welcome-screen">
               <div className="usr-welcome-card">
                 <img src="/assets/Logo_Talkme.png" alt="TalkMe" className="usr-welcome-logo" />
@@ -4130,10 +4116,6 @@ function Usuarios() {
         />
       )}
 
-      {/* VISTA USUARIOS DEL SISTEMA */}
-      {vistaActiva === 'sistema' && (
-        <SistemaUsuarios />
-      )}
 
       {/* MODAL UNIFICADO DE PERMISOS */}
       {showModalPermisos && (

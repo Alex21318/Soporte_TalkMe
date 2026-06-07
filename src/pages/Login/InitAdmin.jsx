@@ -29,8 +29,8 @@ function InitAdmin({ onAdminCreated }) {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+    if (formData.password.length < 12) {
+      setError('La contraseña debe tener al menos 12 caracteres (mayúsculas, minúsculas, números, símbolos)');
       return;
     }
 
@@ -126,7 +126,7 @@ function InitAdmin({ onAdminCreated }) {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 12 caracteres (mayúsculas, minúsculas, números, símbolos)"
               disabled={loading}
               autoComplete="new-password"
             />

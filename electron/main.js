@@ -81,8 +81,9 @@ function createWindow() {
     autoHideMenuBar: true,
     menuBarVisible: false,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
   mainWindow.setMenuBarVisibility(false);
@@ -93,17 +94,18 @@ function createWindow() {
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools(); // Habilitado para desarrollo
+    mainWindow.webContents.openDevTools(); // Habilitado solo para desarrollo
+    
+    // Habilitar F12 para abrir DevTools solo en desarrollo
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.key === 'F12') {
+        mainWindow.webContents.toggleDevTools();
+      }
+    });
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // En producción, DevTools está deshabilitado por seguridad
   }
-
-  // Habilitar F12 para abrir DevTools en producción también
-  mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.key === 'F12') {
-      mainWindow.webContents.toggleDevTools();
-    }
-  });
 
   // Cuando la app esté completamente lista (DOM cargado), hacemos transición suave
   mainWindow.webContents.once('did-finish-load', () => {

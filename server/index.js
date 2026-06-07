@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 
 // ============================================
 // 1. IMPORTACIÓN DE MÓDULOS ORGANIZADOS POR CARPETAS
@@ -36,13 +37,13 @@ const port = 3001;
 
 // Rate Limiting simple para protección contra DDoS/Brute Force
 const requestCounts = new Map();
-const RATE_LIMIT = 500; // requests
+const RATE_LIMIT = 60; // requests por minuto (reducido de 500)
 const RATE_WINDOW = 60000; // 1 minuto en ms
 
 const rateLimiter = (req, res, next) => {
   const ip = req.ip || req.connection.remoteAddress || 'unknown';
   const now = Date.now();
-  
+
   if (!requestCounts.has(ip)) {
     requestCounts.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
   } else {
@@ -53,12 +54,44 @@ const rateLimiter = (req, res, next) => {
     } else {
       data.count++;
     }
-    
+
     if (data.count > RATE_LIMIT) {
       console.warn(`Rate limit exceeded for IP: ${ip}`);
-      return res.status(429).json({ 
-        error: 'Demasiadas solicitudes. Por favor intente mas tarde.' 
+      return res.status(429).json({
+        error: 'Demasiadas solicitudes. Por favor intente mas tarde.'
       });
+    }
+  }
+  next();
+};
+
+// Rate Limiting específico para login (más estricto)
+const loginAttempts = new Map();
+const LOGIN_LIMIT = 5; // 5 intentos por 15 minutos
+const LOGIN_WINDOW = 15 * 60 * 1000; // 15 minutos en ms
+
+const loginRateLimiter = (req, res, next) => {
+  if (req.path === '/api/auth/login' && req.method === 'POST') {
+    const ip = req.ip || req.connection.remoteAddress || 'unknown';
+    const now = Date.now();
+
+    if (!loginAttempts.has(ip)) {
+      loginAttempts.set(ip, { count: 1, resetTime: now + LOGIN_WINDOW });
+    } else {
+      const data = loginAttempts.get(ip);
+      if (now > data.resetTime) {
+        data.count = 1;
+        data.resetTime = now + LOGIN_WINDOW;
+      } else {
+        data.count++;
+      }
+
+      if (data.count > LOGIN_LIMIT) {
+        console.warn(`Login rate limit exceeded for IP: ${ip}`);
+        return res.status(429).json({
+          error: 'Demasiados intentos de login. Intente en 15 minutos.'
+        });
+      }
     }
   }
   next();
@@ -66,6 +99,7 @@ const rateLimiter = (req, res, next) => {
 
 // Aplicar rate limiting a todas las rutas
 app.use(rateLimiter);
+app.use(loginRateLimiter);
 
 // Limpiar el mapa de rate limiting cada 10 minutos para evitar memory leaks
 setInterval(() => {
@@ -75,27 +109,91 @@ setInterval(() => {
       requestCounts.delete(ip);
     }
   }
+  for (const [ip, data] of loginAttempts.entries()) {
+    if (now > data.resetTime) {
+      loginAttempts.delete(ip);
+    }
+  }
 }, 600000);
 
-// CORS restringido solo para localhost y entorno de desarrollo
+// CORS restringido con validación más estricta
 const corsOptions = {
-  origin: [
-    'http://localhost:5173',   // Vite dev server
-    'http://localhost:3000',   // Posible otro puerto
-    'http://127.0.0.1:5173',
-    'file://',                 // Electron
-    null                       // Requests sin origin (Electron)
-  ],
+  origin: (origin, callback) => {
+    // En producción (Electron empaquetado), solo permitir file:// o null
+    if (process.env.NODE_ENV === 'production') {
+      if (!origin || origin === 'file://') {
+        callback(null, true);
+      } else {
+        callback(new Error('No permitido por CORS en producción'));
+      }
+    }
+    // En desarrollo, permitir localhost
+    else {
+      const allowedOrigins = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:3000',
+        'file://',
+        null
+      ];
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('No permitido por CORS'));
+      }
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 };
 app.use(cors(corsOptions));
 
-// Configuramos Express para que acepte JSON con un límite de 50MB.
-// Esto es vital para que las imágenes (logos) y diagramas grandes no den error de "Payload Too Large".
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Middleware para límite de payload específico por endpoint
+const largePayloadEndpoints = ['/api/diagramas', '/api/skills/guardar', '/api/creaciones'];
+
+const payloadLimiter = (req, res, next) => {
+  const isLargePayload = largePayloadEndpoints.some(ep => req.path.startsWith(ep));
+  if (isLargePayload) {
+    express.json({ limit: '10mb' })(req, res, next);
+  } else {
+    express.json({ limit: '1mb' })(req, res, next);
+  }
+};
+
+// Configuramos Express para que acepte JSON con límite reducido de 1MB (antes 50MB)
+// Endpoints específicos (diagramas, skills, creaciones) permiten hasta 10MB
+app.use(payloadLimiter);
+app.use(express.urlencoded({ limit: '1mb', extended: true }));
+
+// Headers de seguridad con helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // 'unsafe-inline' requerido para React
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'", "http://localhost:3001"],
+    }
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
+// Headers de seguridad adicionales
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
 
 // Forzar charset UTF-8 en todas las respuestas JSON
 app.use((req, res, next) => {
@@ -154,20 +252,36 @@ app.use('/', historialRoutes);
 // En produccion no exponemos detalles del error al cliente.
 const isDevelopment = process.env.NODE_ENV === 'development';
 
+// Sanitizador de errores para logs en producción
+const sanitizeError = (err) => {
+  if (!isDevelopment) {
+    return {
+      message: err.message,
+      code: err.code,
+      status: err.status
+    };
+  }
+  return err;
+};
+
 app.use((err, req, res, next) => {
+  const sanitizedErr = sanitizeError(err);
+
   console.error('*** ERROR EN EL SERVIDOR UNIFICADO ***');
   console.error('Timestamp:', new Date().toISOString());
   console.error('Ruta:', req.path);
   console.error('Metodo:', req.method);
-  console.error('Error:', err.message);
-  console.error('Stack:', err.stack);
-  
+  console.error('Error:', sanitizedErr.message);
+  if (isDevelopment) {
+    console.error('Stack:', err.stack);
+  }
+
   // No exponer detalles de errores de base de datos o del servidor al cliente
-  const mensajeError = isDevelopment 
-    ? err.message 
+  const mensajeError = isDevelopment
+    ? err.message
     : 'Error interno del servidor. Por favor intente mas tarde.';
-    
-  res.status(err.status || 500).json({ 
+
+  res.status(err.status || 500).json({
     error: mensajeError,
     // Solo incluir detalle en desarrollo
     ...(isDevelopment && { stack: err.stack })

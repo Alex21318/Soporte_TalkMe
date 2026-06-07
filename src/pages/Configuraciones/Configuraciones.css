@@ -1,0 +1,10 @@
+/* Usar los mismos estilos base que Creaciones.css */
+@import '../Creaciones/Creaciones.css';
+
+/* ── OVERRIDE: en Configuraciones, el panel de contenido NO hace scroll.
+   Los componentes hijos (GestionPermisos, Auditoria, etc.) manejan su propio scroll. ── */
+#modulo-configuraciones-root .cr-content {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}

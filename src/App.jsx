@@ -13,6 +13,7 @@ import Reportes from './pages/Reportes/Reportes2';
 import Cierres from './pages/Cierres/Cierres';
 import Creaciones from './pages/Creaciones/Creaciones';
 import DiagramasBD from './pages/DiagramasBD/DiagramasBD';
+import Configuraciones from './pages/Configuraciones/Configuraciones';
 import { API_URLS } from './config/api';
 import './App.css';
 
@@ -57,7 +58,7 @@ function App() {
 
   const checkNeedsInit = async () => {
     try {
-      const response = await fetchWithAuth(API_URLS.checkInit());
+      const response = await fetch(API_URLS.checkInit());
       const data = await response.json();
       setNeedsInit(data.needsInit);
     } catch (err) {
@@ -148,6 +149,7 @@ function App() {
             <Route path="/creaciones" element={<Creaciones />} />
             <Route path="/diagramas-bd" element={<DiagramasBD />} />
             <Route path="/auditoria" element={<Navigate to="/cierres" replace />} />
+            <Route path="/configuraciones" element={<Configuraciones />} />
           </Routes>
         </main>
       </div>
