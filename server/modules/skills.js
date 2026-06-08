@@ -2756,14 +2756,6 @@ router.get('/api/usuarios/historial-estados', async (req, res) => {
             if (poolSeg) {
                 // Obtener nombres de usuario únicos del historial
                 const nombresUsuarios = [...new Set(historialRows.map(r => r.LOGIN_USUARIO))];
-                console.log(`[HistorialEstados] Buscando ${nombresUsuarios.length} usuarios en seguridad...`);
-                
-                // DEBUG: Ver qué usuarios existen en SEG_USUARIO
-                const [allSegUsers] = await poolSeg.query(
-                    `SELECT USUARIO FROM SEG_USUARIO LIMIT 10`
-                );
-                console.log(`[HistorialEstados] Primeros 10 usuarios en SEG_USUARIO:`, allSegUsers.map(u => u.USUARIO));
-                
                 if (nombresUsuarios.length > 0) {
                     const placeholders = nombresUsuarios.map(() => '?').join(',');
                     const [segRows] = await poolSeg.query(
@@ -2777,23 +2769,11 @@ router.get('/api/usuarios/historial-estados', async (req, res) => {
                         nombresUsuarios
                     );
                     
-                    console.log(`[HistorialEstados] Encontrados ${segRows.length} usuarios con perfiles en seguridad`);
-                    
-                    // DEBUG: Mostrar algunos ejemplos
-                    if (segRows.length > 0) {
-                        console.log(`[HistorialEstados] Ejemplo - Primer usuario encontrado:`, segRows[0]);
-                    }
-                    
                     // Crear mapa: USUARIO -> PERFILES
                     const segMap = {};
                     segRows.forEach(s => { 
                         segMap[s.USUARIO] = s.PERFILES; 
-                        console.log(`[HistorialEstados] MAPA: ${s.USUARIO} -> ${s.PERFILES}`);
                     });
-                    
-                    // DEBUG: Mostrar primeros 5 nombres buscados vs encontrados
-                    console.log(`[HistorialEstados] Primeros 5 nombres buscados en productiva:`, nombresUsuarios.slice(0, 5));
-                    console.log(`[HistorialEstados] Primeros 5 nombres encontrados en seguridad:`, segRows.slice(0, 5).map(s => s.USUARIO));
                     
                     // Mapear por ID_USUARIO de la tabla productiva
                     let conPerfil = 0;
@@ -2809,7 +2789,6 @@ router.get('/api/usuarios/historial-estados', async (req, res) => {
                         }
                     });
                     
-                    console.log(`[HistorialEstados] Resumen: ${conPerfil} con perfil, ${sinPerfil} sin perfil`);
                 }
             }
         } catch (err) {

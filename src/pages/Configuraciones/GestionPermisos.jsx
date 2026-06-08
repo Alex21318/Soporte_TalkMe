@@ -30,7 +30,6 @@ function GestionPermisos() {
     // Calcular cuántas filas caben en el espacio disponible
     const calculatedItems = Math.max(5, Math.floor(wrapperHeight / rowHeight));
     
-    console.log(`Wrapper height: ${wrapperHeight}px, Calculated items: ${calculatedItems}`);
     return calculatedItems;
   }, []);
 
@@ -71,10 +70,6 @@ function GestionPermisos() {
       const permisosData = await permisosRes.json();
       const usuariosData = await usuariosRes.json();
 
-      console.log('Roles data:', rolesData);
-      console.log('Permisos data:', permisosData);
-      console.log('Usuarios data:', usuariosData);
-
       setRoles(rolesData);
       setPermisos(permisosData);
       // El endpoint de usuarios devuelve {users: [...]} o directamente [...]
@@ -99,7 +94,6 @@ function GestionPermisos() {
     try {
       const permisosRes = await fetchWithAuth(`/api/auth/roles/${rol.id}/permisos`);
       const permisosData = await permisosRes.json();
-      console.log('Permisos del rol (frontend):', permisosData);
       setRolPermisos(permisosData);
       setRolPermisosOriginal(permisosData); // Guardar estado original
     } catch (error) {
@@ -116,7 +110,6 @@ function GestionPermisos() {
     try {
       const permisosRes = await fetchWithAuth(`/api/auth/users/${usuario.id}/permisos`);
       const permisosData = await permisosRes.json();
-      console.log('Permisos del usuario:', permisosData);
       setUsuarioPermisos(permisosData);
       setUsuarioPermisosOriginal(permisosData); // Guardar estado original
     } catch (error) {

@@ -239,6 +239,8 @@ export default function UsuariosQRM({ dbKey, idEmpresa, empresas, filtrosExterno
     setPaginaActual(1);
   }, [filtros.usuario, filtros.sociedad, filtros.marca, filtros.canal]);
 
+  if (!idEmpresa) return null;
+
   return (
     <div className="usr-qrm-container">
       {/* Botón de configuración masiva - solo cuando hay selección */}
@@ -256,10 +258,8 @@ export default function UsuariosQRM({ dbKey, idEmpresa, empresas, filtrosExterno
       {/* Lista de usuarios QRM */}
       {loading.usuarios ? (
         <div className="usr-qrm-loading">Cargando usuarios...</div>
-      ) : idEmpresa && usuariosFiltrados.length === 0 ? (
+      ) : usuariosFiltrados.length === 0 ? (
         <div className="usr-qrm-empty">No hay usuarios que coincidan con los filtros</div>
-      ) : !idEmpresa ? (
-        <div className="usr-qrm-empty"></div>
       ) : (
         <>
         <div className="usr-qrm-table-wrapper">
@@ -294,30 +294,30 @@ export default function UsuariosQRM({ dbKey, idEmpresa, empresas, filtrosExterno
             </tbody>
           </table>
         </div>
-      </>
-      )}
 
-      {/* Paginación */}
-      {usuariosFiltrados.length > itemsPorPagina && (
-        <div className="usr-qrm-pagination">
-          <button 
-            className="usr-qrm-page-btn" 
-            onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
-            disabled={paginaActual === 1}
-          >
-            ← Anterior
-          </button>
-          <span className="usr-qrm-page-info">
-            Página {paginaActual} de {totalPaginas} ({usuariosFiltrados.length} total)
-          </span>
-          <button 
-            className="usr-qrm-page-btn" 
-            onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
-            disabled={paginaActual === totalPaginas}
-          >
-            Siguiente →
-          </button>
-        </div>
+        {/* Paginación */}
+        {usuariosFiltrados.length > itemsPorPagina && (
+          <div className="usr-qrm-pagination">
+            <button 
+              className="usr-qrm-page-btn" 
+              onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+              disabled={paginaActual === 1}
+            >
+              ← Anterior
+            </button>
+            <span className="usr-qrm-page-info">
+              Página {paginaActual} de {totalPaginas} ({usuariosFiltrados.length} total)
+            </span>
+            <button 
+              className="usr-qrm-page-btn" 
+              onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+              disabled={paginaActual === totalPaginas}
+            >
+              Siguiente →
+            </button>
+          </div>
+        )}
+      </>
       )}
 
       {mostrarModalMasivo && (

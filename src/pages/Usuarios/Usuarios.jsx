@@ -296,6 +296,10 @@ function Usuarios() {
   const [showSkillsFiltroMasivo, setShowSkillsFiltroMasivo] = useState(false);
   const [usuariosConSkillsMapaMasivo, setUsuariosConSkillsMapaMasivo] = useState(null);
   const skillsFiltroRefMasivo = useRef(null);
+  const skillsFiltroListMasivo = useRef(null);
+  const botRedesFiltroListMasivo = useRef(null);
+  const skillsFiltroListHistorial = useRef(null);
+  const botRedesFiltroListHistorial = useRef(null);
 
   // Filtro de bot redes — vista REVISAR
   const [botRedesFiltroRevisar, setBotRedesFiltroRevisar] = useState([]);
@@ -2144,7 +2148,7 @@ function Usuarios() {
                         </button>
                       </div>
                     </div>
-                    <div className="usr-skills-filtro-list">
+                    <div className="usr-skills-filtro-list" ref={skillsFiltroListMasivo}>
                       {skillsFiltroDisponibles
                         .filter(s => s.NOMBRE_SKILL.toLowerCase().includes(skillsFiltroSearchMasivo.toLowerCase()))
                         .sort((a, b) => {
@@ -2155,11 +2159,17 @@ function Usuarios() {
                         .map(s => {
                           const seleccionado = !!skillsFiltroMasivo.find(x => x.ID_SKILL === s.ID_SKILL);
                           return (
-                            <label key={s.ID_SKILL} className="usr-skills-filtro-item usr-skills-filtro-check-item" onClick={ev => ev.stopPropagation()}>
+                            <label key={s.ID_SKILL} className={`usr-skills-filtro-item usr-skills-filtro-check-item${seleccionado ? ' selected' : ''}`} onClick={ev => ev.stopPropagation()}>
                               <input
                                 type="checkbox"
                                 checked={seleccionado}
-                                onChange={() => { setSkillsFiltroMasivo(prev => seleccionado ? prev.filter(x => x.ID_SKILL !== s.ID_SKILL) : [...prev, s]); setPaginaLocal(1); }}
+                                onChange={() => {
+                                  const el = skillsFiltroListMasivo.current;
+                                  const savedScroll = el ? el.scrollTop : 0;
+                                  setSkillsFiltroMasivo(prev => seleccionado ? prev.filter(x => x.ID_SKILL !== s.ID_SKILL) : [...prev, s]);
+                                  setPaginaLocal(1);
+                                  requestAnimationFrame(() => { if (el) el.scrollTop = savedScroll; });
+                                }}
                               />
                               <span className="usr-skills-filtro-item-name">{s.NOMBRE_SKILL}</span>
                             </label>
@@ -2232,7 +2242,7 @@ function Usuarios() {
                         </button>
                       </div>
                     </div>
-                    <div className="usr-skills-filtro-list">
+                    <div className="usr-skills-filtro-list" ref={botRedesFiltroListMasivo}>
                       {(() => {
                         const filtrados = botRedesDisponibles.filter(b => {
                           const matchText = (b.NOMBRE_BOT || '').toLowerCase().includes(botRedesFiltroSearchMasivo.toLowerCase());
@@ -2263,11 +2273,17 @@ function Usuarios() {
                             return iconos[idRedSocial] || '/assets/webchat.png';
                           };
                           return (
-                            <label key={b.ID_BOT_REDES} className="usr-skills-filtro-item usr-skills-filtro-check-item usr-botred-item" onClick={ev => ev.stopPropagation()}>
+                            <label key={b.ID_BOT_REDES} className={`usr-skills-filtro-item usr-skills-filtro-check-item usr-botred-item${seleccionado ? ' selected' : ''}`} onClick={ev => ev.stopPropagation()}>
                               <input
                                 type="checkbox"
                                 checked={seleccionado}
-                                onChange={() => { setBotRedesFiltroMasivo(prev => seleccionado ? prev.filter(x => x.ID_BOT_REDES !== b.ID_BOT_REDES) : [...prev, b]); setPaginaLocal(1); }}
+                                onChange={() => {
+                                  const el = botRedesFiltroListMasivo.current;
+                                  const savedScroll = el ? el.scrollTop : 0;
+                                  setBotRedesFiltroMasivo(prev => seleccionado ? prev.filter(x => x.ID_BOT_REDES !== b.ID_BOT_REDES) : [...prev, b]);
+                                  setPaginaLocal(1);
+                                  requestAnimationFrame(() => { if (el) el.scrollTop = savedScroll; });
+                                }}
                               />
                               <img
                                 src={getIconoRed(b.ID_RED_SOCIAL)}
@@ -2401,7 +2417,7 @@ function Usuarios() {
                             </button>
                           </div>
                         </div>
-                        <div className="usr-skills-filtro-list">
+                        <div className="usr-skills-filtro-list" ref={skillsFiltroListHistorial}>
                           {skillsFiltroDisponibles
                             .filter(s => s.NOMBRE_SKILL.toLowerCase().includes(skillsFiltroSearchHistorial.toLowerCase()))
                             .sort((a, b) => {
@@ -2412,11 +2428,16 @@ function Usuarios() {
                             .map(s => {
                               const seleccionado = !!skillsFiltroHistorial.find(x => x.ID_SKILL === s.ID_SKILL);
                               return (
-                                <label key={s.ID_SKILL} className="usr-skills-filtro-item usr-skills-filtro-check-item" onClick={ev => ev.stopPropagation()}>
+                                <label key={s.ID_SKILL} className={`usr-skills-filtro-item usr-skills-filtro-check-item${seleccionado ? ' selected' : ''}`} onClick={ev => ev.stopPropagation()}>
                                   <input
                                     type="checkbox"
                                     checked={seleccionado}
-                                    onChange={() => { setSkillsFiltroHistorial(prev => seleccionado ? prev.filter(x => x.ID_SKILL !== s.ID_SKILL) : [...prev, s]); }}
+                                    onChange={() => {
+                                      const el = skillsFiltroListHistorial.current;
+                                      const savedScroll = el ? el.scrollTop : 0;
+                                      setSkillsFiltroHistorial(prev => seleccionado ? prev.filter(x => x.ID_SKILL !== s.ID_SKILL) : [...prev, s]);
+                                      requestAnimationFrame(() => { if (el) el.scrollTop = savedScroll; });
+                                    }}
                                   />
                                   <span className="usr-skills-filtro-item-name">{s.NOMBRE_SKILL}</span>
                                 </label>
@@ -2475,7 +2496,7 @@ function Usuarios() {
                             </button>
                           </div>
                         </div>
-                        <div className="usr-skills-filtro-list">
+                        <div className="usr-skills-filtro-list" ref={botRedesFiltroListHistorial}>
                           {botRedesDisponibles
                             .filter(b => (b.NOMBRE_BOT || b.DESCRIPCION || '').toLowerCase().includes(botRedesFiltroSearchHistorial.toLowerCase()))
                             .sort((a, b) => {
@@ -2487,11 +2508,16 @@ function Usuarios() {
                               const nombre = b.NOMBRE_BOT || b.DESCRIPCION || 'Sin nombre';
                               const seleccionado = !!botRedesFiltroHistorial.find(x => x.ID_BOT_REDES === b.ID_BOT_REDES);
                               return (
-                                <label key={b.ID_BOT_REDES} className="usr-skills-filtro-item usr-skills-filtro-check-item" onClick={ev => ev.stopPropagation()}>
+                                <label key={b.ID_BOT_REDES} className={`usr-skills-filtro-item usr-skills-filtro-check-item${seleccionado ? ' selected' : ''}`} onClick={ev => ev.stopPropagation()}>
                                   <input
                                     type="checkbox"
                                     checked={seleccionado}
-                                    onChange={() => { setBotRedesFiltroHistorial(prev => seleccionado ? prev.filter(x => x.ID_BOT_REDES !== b.ID_BOT_REDES) : [...prev, b]); }}
+                                    onChange={() => {
+                                      const el = botRedesFiltroListHistorial.current;
+                                      const savedScroll = el ? el.scrollTop : 0;
+                                      setBotRedesFiltroHistorial(prev => seleccionado ? prev.filter(x => x.ID_BOT_REDES !== b.ID_BOT_REDES) : [...prev, b]);
+                                      requestAnimationFrame(() => { if (el) el.scrollTop = savedScroll; });
+                                    }}
                                   />
                                   <span className="usr-skills-filtro-item-name">{nombre}</span>
                                 </label>
@@ -3232,21 +3258,19 @@ function Usuarios() {
                               <div className="usr-revisar-skills-actions">
                                 {faltanSkills && (
                                   <button
-                                    className="usr-skills-action-link add-all"
+                                    className="usr-skill-bulk-btn add-all"
+                                    title="Agregar todas"
                                     disabled={loading.masivo}
                                     onClick={ev => { ev.stopPropagation(); cambiarTodasSkillsUsuario(usuario, skillsFaltantes, true, 'masivo'); }}
-                                  >
-                                    + Agregar todas ({skillsFaltantes.length})
-                                  </button>
+                                  >+</button>
                                 )}
                                 {tieneSkills && (
                                   <button
-                                    className="usr-skills-action-link remove-all"
+                                    className="usr-skill-bulk-btn remove-all"
+                                    title="Quitar todas"
                                     disabled={loading.masivo}
                                     onClick={ev => { ev.stopPropagation(); cambiarTodasSkillsUsuario(usuario, skillsUsuario, false, 'masivo'); }}
-                                  >
-                                    × Quitar todas ({skillsUsuario.length})
-                                  </button>
+                                  >×</button>
                                 )}
                               </div>
                             </div>
@@ -3291,21 +3315,19 @@ function Usuarios() {
                               <div className="usr-revisar-skills-actions">
                                 {faltanBotRedes && (
                                   <button
-                                    className="usr-skills-action-link add-all"
+                                    className="usr-skill-bulk-btn add-all"
+                                    title="Agregar todas"
                                     disabled={loading.masivo}
                                     onClick={ev => { ev.stopPropagation(); cambiarTodasBotRedesUsuario(usuario, botRedesFaltantes, true, 'masivo'); }}
-                                  >
-                                    + Agregar todos ({botRedesFaltantes.length})
-                                  </button>
+                                  >+</button>
                                 )}
                                 {tieneBotRedes && (
                                   <button
-                                    className="usr-skills-action-link remove-all"
+                                    className="usr-skill-bulk-btn remove-all"
+                                    title="Quitar todas"
                                     disabled={loading.masivo}
                                     onClick={ev => { ev.stopPropagation(); cambiarTodasBotRedesUsuario(usuario, botRedesUsuario, false, 'masivo'); }}
-                                  >
-                                    × Quitar todos ({botRedesUsuario.length})
-                                  </button>
+                                  >×</button>
                                 )}
                               </div>
                             </div>

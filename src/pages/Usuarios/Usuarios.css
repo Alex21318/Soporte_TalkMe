@@ -1298,8 +1298,8 @@
 
 .usr-revisar-skills-actions {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 4px;
+  flex-wrap: nowrap;
 }
 
 .usr-skills-action-link {
@@ -1332,6 +1332,49 @@
 }
 
 .usr-skills-action-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Botón compacto para Agregar/Quitar todas (solo icono) */
+.usr-skill-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.usr-skill-bulk-btn.add-all {
+  color: #16a34a;
+  background: #dcfce7;
+}
+
+.usr-skill-bulk-btn.add-all:hover:not(:disabled) {
+  background: #bbf7d0;
+  transform: scale(1.1);
+}
+
+.usr-skill-bulk-btn.remove-all {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.usr-skill-bulk-btn.remove-all:hover:not(:disabled) {
+  background: #fecaca;
+  transform: scale(1.1);
+}
+
+.usr-skill-bulk-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -2789,6 +2832,11 @@
   transition: background 0.1s;
 }
 
+.usr-skills-filtro-item.selected {
+  background: rgba(0, 168, 132, 0.08);
+  font-weight: 600;
+}
+
 .usr-skills-filtro-check-item {
   display: flex;
   align-items: center;
@@ -3918,7 +3966,9 @@
 }
 
 .usr-topbar-field-skills .usr-skills-filtro-item {
-  display: block !important;
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
   width: 100% !important;
   box-sizing: border-box;
 }
@@ -5116,6 +5166,24 @@
   font-size: 11px;
   font-style: italic;
   padding: 4px 6px;
+}
+
+.usr-qrm-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tm-text-soft);
+  font-size: 14px;
+}
+
+.usr-qrm-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tm-text-soft);
+  font-size: 14px;
 }
 
 .usr-qrm-usuario-header {

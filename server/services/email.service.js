@@ -128,8 +128,8 @@ async function createTransporter() {
             ciphers: 'SSLv3',
             rejectUnauthorized: false
         },
-        debug: process.env.NODE_ENV === 'development',
-        logger: process.env.NODE_ENV === 'development',
+        debug: false,
+        logger: false,
         encoding: 'utf-8'
     });
 }

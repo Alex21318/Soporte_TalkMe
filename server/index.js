@@ -37,7 +37,7 @@ const port = 3001;
 
 // Rate Limiting simple para protección contra DDoS/Brute Force
 const requestCounts = new Map();
-const RATE_LIMIT = 60; // requests por minuto (reducido de 500)
+const RATE_LIMIT = 5000; // requests por minuto
 const RATE_WINDOW = 60000; // 1 minuto en ms
 
 const rateLimiter = (req, res, next) => {

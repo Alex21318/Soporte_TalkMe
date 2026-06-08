@@ -301,7 +301,7 @@ export function GestionMasivaPermisos({
     <div className="ci-masiva">
       {/* Mostrar logo de bienvenida cuando no hay resultados y aún no se buscó */}
       {!loading && usuarios.length === 0 && (
-        <div style={{ padding: '30px 20px', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', height: 'fit-content' }}>
+        <div style={{ flex: 1, padding: '30px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div className="ci-welcome-card">
             <img src="/assets/Logo_Talkme.png" alt="TalkMe" className="ci-welcome-logo" />
             <h2 className="ci-welcome-title">Permisos de Seguridad</h2>
@@ -411,7 +411,7 @@ export function ContenidoSeguridad({ resultados, loading, dbKey, onPermisosSaved
 
   if (loading) return <div style={{ padding: '30px 20px', display: 'flex', justifyContent: 'center' }}><div className="ci-spinner" /><p>Consultando permisos...</p></div>;
   if (resultados === null) return (
-    <div style={{ padding: '30px 20px', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', height: 'fit-content' }}>
+    <div style={{ flex: 1, padding: '30px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       <div className="ci-welcome-card">
         <img src="/assets/Logo_Talkme.png" alt="TalkMe" className="ci-welcome-logo" />
         <h2 className="ci-welcome-title">Permisos de Seguridad</h2>
@@ -420,7 +420,7 @@ export function ContenidoSeguridad({ resultados, loading, dbKey, onPermisosSaved
     </div>
   );
   if (resultados.length === 0) return (
-    <div style={{ padding: '30px 20px', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', height: 'fit-content' }}>
+    <div style={{ flex: 1, padding: '30px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       <div className="ci-welcome-card">
         <span style={{ fontSize: 48 }}>🔍</span>
         <h2 className="ci-welcome-title">Sin resultados</h2>

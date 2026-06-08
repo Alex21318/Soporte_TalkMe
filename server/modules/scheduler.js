@@ -739,24 +739,8 @@ async function guardarArchivo(rows, carpeta, nombreArchivo, esGrupoQ, sheetName)
         return;
     }
     
-    // DEBUG: Verificar codificación de datos crudos
-    const sampleRow = rows[0];
-    const sampleKeys = Object.keys(sampleRow);
-    const stringKey = sampleKeys.find(k => typeof sampleRow[k] === 'string' && sampleRow[k].length > 10);
-    if (stringKey) {
-        const rawValue = sampleRow[stringKey];
-        const hasReplacementChar = rawValue.includes('\uFFFD');
-        const hasDoubleFFFD = rawValue.includes('\uFFFD\uFFFD');
-        console.log(`[Scheduler] DEBUG Campo ${stringKey}: has=`, hasReplacementChar, 'hasDouble=', hasDoubleFFFD, 'preview=', rawValue.substring(0, 50));
-    }
-    
     // LIMPIAR caracteres corruptos de todas las filas
     const rowsLimpios = rows.map(limpiarFila);
-    
-    // DEBUG: Verificar después de limpiar
-    if (stringKey && rowsLimpios[0][stringKey] !== sampleRow[stringKey]) {
-        console.log(`[Scheduler] DEBUG Limpio: `, rowsLimpios[0][stringKey].substring(0, 50));
-    }
     
     if (!fs.existsSync(carpeta)) fs.mkdirSync(carpeta, { recursive: true });
     const destino = path.join(carpeta, nombreArchivo);

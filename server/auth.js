@@ -282,8 +282,6 @@ router.post('/api/auth/login', async (req, res) => {
             nombre: user.nombre
         });
 
-        console.log('[LOGIN] Usuario:', user.usuario, 'rol_id:', user.rol_id);
-
         // Obtener permisos del usuario (rol + individuales)
         let permissions = [];
         if (user.rol_id) {
@@ -293,7 +291,6 @@ router.post('/api/auth/login', async (req, res) => {
                 INNER JOIN PERMISOS p ON rp.permiso_id = p.id
                 WHERE rp.rol_id = ?
             `, [user.rol_id]);
-            console.log('[LOGIN] Permisos del rol:', permisosRol);
             permissions = permisosRol.map(p => `${p.modulo}:${p.accion}`);
         }
 
@@ -307,9 +304,7 @@ router.post('/api/auth/login', async (req, res) => {
                 WHERE up.usuario_id = ?
             `, [user.id]);
             permisosIndividuales = permisosIndividualesResult;
-            console.log('[LOGIN] Permisos individuales:', permisosIndividuales);
         } catch (error) {
-            console.log('[LOGIN] Tabla USUARIO_PERMISOS no existe o error:', error.message);
             // Si la tabla no existe, continuar sin permisos individuales
         }
 
@@ -321,7 +316,6 @@ router.post('/api/auth/login', async (req, res) => {
         permisosIndividualesFormat.forEach(p => permisosMap.set(p, p));
 
         const finalPermissions = Array.from(permisosMap.values());
-        console.log('[LOGIN] Permisos finales:', finalPermissions);
 
         res.json({
             success: true,
@@ -369,7 +363,6 @@ router.get('/api/auth/verify', authMiddleware, async (req, res) => {
             `, [req.user.id]);
             permisosIndividuales = permisosIndividualesResult;
         } catch (error) {
-            console.log('[VERIFY] Tabla USUARIO_PERMISOS no existe o error:', error.message);
             // Si la tabla no existe, continuar sin permisos individuales
         }
 
@@ -790,16 +783,11 @@ router.get('/api/auth/users/:id/permisos', authMiddleware, async (req, res) => {
         const dbControl = pools['control'];
         const usuarioId = req.params.id;
 
-        console.log('[USUARIOS] Obteniendo permisos para usuario ID:', usuarioId);
-
         // Obtener permisos del rol del usuario
         const [usuario] = await dbControl.query(
             'SELECT rol_id FROM USUARIOS_SISTEMA WHERE id = ?',
             [usuarioId]
         );
-
-        console.log('[USUARIOS] Usuario:', usuario);
-        console.log('[USUARIOS] Usuario[0]:', usuario[0]);
 
         let permisosRol = [];
         if (usuario && usuario[0] && usuario[0].rol_id) {
@@ -810,7 +798,6 @@ router.get('/api/auth/users/:id/permisos', authMiddleware, async (req, res) => {
                 WHERE rp.rol_id = ?
             `, [usuario[0].rol_id]);
             permisosRol = permisos;
-            console.log('[USUARIOS] Permisos del rol:', permisosRol.length);
         }
 
         // Obtener permisos individuales del usuario (con try-catch por si la tabla no existe)
@@ -823,9 +810,7 @@ router.get('/api/auth/users/:id/permisos', authMiddleware, async (req, res) => {
                 WHERE up.usuario_id = ?
             `, [usuarioId]);
             permisosIndividuales = permisosIndividualesResult;
-            console.log('[USUARIOS] Permisos individuales:', permisosIndividuales.length);
         } catch (error) {
-            console.log('[USUARIOS] Tabla USUARIO_PERMISOS no existe o error:', error.message);
             // Si la tabla no existe, continuar sin permisos individuales
         }
 
@@ -839,7 +824,6 @@ router.get('/api/auth/users/:id/permisos', authMiddleware, async (req, res) => {
         permisosIndividuales.forEach(p => permisosMap.set(p.id, p));
 
         const finalPermisos = Array.from(permisosMap.values());
-        console.log('[USUARIOS] Permisos finales:', finalPermisos.length);
 
         res.json(finalPermisos);
     } catch (error) {
