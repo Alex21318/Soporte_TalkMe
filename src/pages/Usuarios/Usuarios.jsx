@@ -7,6 +7,7 @@ import { logPermisoAgregado, logPermisoEliminado, logPermisoMasivo } from '../..
 import AHistorialEstados from './aHistorialEstados';
 import { SeguridadModal, GestionMasivaPermisos, ContenidoSeguridad } from './aSeguridad';
 import UsuariosQRM from './UsuariosQRM';
+import BitacoraAdministrativa from './BitacoraAdministrativa';
 import ConfirmModal from '../../components/ConfirmModal';
 import './Usuarios.css';
 
@@ -1735,6 +1736,20 @@ function Usuarios() {
         </svg>
       )
     },
+    { 
+      id: 'bitacora', 
+      label: 'Bitácora Admin', 
+      desc: 'Historial de cambios', 
+      icon: (
+        <svg className="nav-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10,9 9,9 8,9"/>
+        </svg>
+      )
+    },
   ];
 
   const [expandedSidebarItem, setExpandedSidebarItem] = useState('');
@@ -1752,8 +1767,8 @@ function Usuarios() {
 
         {/* Filtros inline con etiquetas */}
         <div className="usr-topbar-filters">
-          {/* Filtros compartidos (ocultos en seguridad) */}
-          {vistaActiva !== 'seguridad' && (
+          {/* Filtros compartidos (ocultos en seguridad y bitácora) */}
+          {vistaActiva !== 'seguridad' && vistaActiva !== 'bitacora' && (
             <>
               <div className="usr-topbar-field">
                 <span className="usr-topbar-label">Base de Datos</span>
@@ -2905,148 +2920,77 @@ function Usuarios() {
                   type="text"
                   className="usr-topbar-select"
                   placeholder="Buscar usuario..."
-                  value={filtrosQRM.usuario || ''}
-                  onChange={e => setFiltrosQRM({...filtrosQRM, usuario: e.target.value})}
+                  value={filtrosQRM.usuario}
+                  onChange={e => setFiltrosQRM({ ...filtrosQRM, usuario: e.target.value })}
                 />
               </div>
-              <div className="usr-topbar-field usr-topbar-field-skills" ref={sociedadQRMRef}>
+
+              <div className="usr-topbar-field">
                 <span className="usr-topbar-label">Sociedad</span>
-                <div className="usr-skills-filtro-wrap">
-                  <div
-                    className={`usr-skills-filtro-input ${showSociedadQRM ? 'open' : ''}`}
-                    onClick={() => setShowSociedadQRM(v => !v)}
-                  >
-                    {filtrosQRM.sociedad ? (
-                      <span className="usr-skills-filtro-summary">{filtrosQRM.sociedad}</span>
-                    ) : (
-                      <span className="usr-skills-filtro-placeholder">Todas</span>
-                    )}
-                    <span className="usr-skills-filtro-chevron">{showSociedadQRM ? '▲' : '▼'}</span>
-                  </div>
-                  {showSociedadQRM && (
-                    <div className="usr-skills-filtro-dropdown">
-                      <div className="usr-skills-filtro-header">
-                        <input
-                          className="usr-skills-filtro-search"
-                          type="text"
-                          placeholder="🔍 Buscar sociedad..."
-                          value={sociedadQRMSearch}
-                          onChange={e => setSociedadQRMSearch(e.target.value)}
-                          onClick={ev => ev.stopPropagation()}
-                          autoFocus
-                        />
-                      </div>
-                      <div className="usr-skills-filtro-list">
-                        <label
-                          className={`usr-skills-filtro-item ${!filtrosQRM.sociedad ? 'selected' : ''}`}
-                          onClick={() => { setFiltrosQRM({...filtrosQRM, sociedad: ''}); setShowSociedadQRM(false); setSociedadQRMSearch(''); }}
-                        >
-                          <span className="usr-skills-filtro-item-name">Todas</span>
-                        </label>
-                        {sociedadesQRM
-                          .filter(s => s.toLowerCase().includes(sociedadQRMSearch.toLowerCase()))
-                          .map(s => (
-                            <label
-                              key={s}
-                              className={`usr-skills-filtro-item ${filtrosQRM.sociedad === s ? 'selected' : ''}`}
-                              onClick={() => { setFiltrosQRM({...filtrosQRM, sociedad: s}); setShowSociedadQRM(false); setSociedadQRMSearch(''); }}
-                            >
-                              <span className="usr-skills-filtro-item-name">{s}</span>
-                            </label>
-                          ))}
-                        {sociedadesQRM.filter(s => s.toLowerCase().includes(sociedadQRMSearch.toLowerCase())).length === 0 && (
-                          <div className="usr-skills-filtro-empty">No se encontraron sociedades</div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <select
+                  className="usr-topbar-select"
+                  value={filtrosQRM.sociedad}
+                  onChange={e => setFiltrosQRM({ ...filtrosQRM, sociedad: e.target.value })}
+                >
+                  <option value="">Todas</option>
+                  {sociedadesQRM.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
               </div>
-              <div className="usr-topbar-field usr-topbar-field-skills" ref={marcaQRMRef}>
+
+              <div className="usr-topbar-field">
                 <span className="usr-topbar-label">Marca</span>
-                <div className="usr-skills-filtro-wrap">
-                  <div
-                    className={`usr-skills-filtro-input ${showMarcaQRM ? 'open' : ''}`}
-                    onClick={() => setShowMarcaQRM(v => !v)}
-                  >
-                    {filtrosQRM.marca ? (
-                      <span className="usr-skills-filtro-summary">{filtrosQRM.marca}</span>
-                    ) : (
-                      <span className="usr-skills-filtro-placeholder">Todas</span>
-                    )}
-                    <span className="usr-skills-filtro-chevron">{showMarcaQRM ? '▲' : '▼'}</span>
-                  </div>
-                  {showMarcaQRM && (
-                    <div className="usr-skills-filtro-dropdown">
-                      <div className="usr-skills-filtro-header">
-                        <input
-                          className="usr-skills-filtro-search"
-                          type="text"
-                          placeholder="🔍 Buscar marca..."
-                          value={marcaQRMSearch}
-                          onChange={e => setMarcaQRMSearch(e.target.value)}
-                          onClick={ev => ev.stopPropagation()}
-                          autoFocus
-                        />
-                      </div>
-                      <div className="usr-skills-filtro-list">
-                        <label
-                          className={`usr-skills-filtro-item ${!filtrosQRM.marca ? 'selected' : ''}`}
-                          onClick={() => { setFiltrosQRM({...filtrosQRM, marca: ''}); setShowMarcaQRM(false); setMarcaQRMSearch(''); }}
-                        >
-                          <span className="usr-skills-filtro-item-name">Todas</span>
-                        </label>
-                        {marcasQRM
-                          .filter(m => m.toLowerCase().includes(marcaQRMSearch.toLowerCase()))
-                          .map(m => (
-                            <label
-                              key={m}
-                              className={`usr-skills-filtro-item ${filtrosQRM.marca === m ? 'selected' : ''}`}
-                              onClick={() => { setFiltrosQRM({...filtrosQRM, marca: m}); setShowMarcaQRM(false); setMarcaQRMSearch(''); }}
-                            >
-                              <span className="usr-skills-filtro-item-name">{m}</span>
-                            </label>
-                          ))}
-                        {marcasQRM.filter(m => m.toLowerCase().includes(marcaQRMSearch.toLowerCase())).length === 0 && (
-                          <div className="usr-skills-filtro-empty">No se encontraron marcas</div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <select
+                  className="usr-topbar-select"
+                  value={filtrosQRM.marca}
+                  onChange={e => setFiltrosQRM({ ...filtrosQRM, marca: e.target.value })}
+                >
+                  <option value="">Todas</option>
+                  {marcasQRM.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
               </div>
             </>
           )}
+
+          {/* Filtros para vista Bitácora Administrativa se manejan dentro del componente */}
         </div>
 
         {/* Acciones */}
         <div className="usr-topbar-divider" />
-        <button
-          className="usr-topbar-btn-buscar"
-          onClick={() => {
-            if (vistaActiva === 'seguridad') {
-              if (subSeccionSeg === 'masiva') { buscarMasiva(); return; }
-              consultarSeg();
-              return;
-            }
-            if (!filtros.id_empresa) return;
-            if (vistaActiva === 'historial') {
-              // En historial, llamar a la función buscar del componente
-              historialEstadosRef.current?.buscar();
-            } else {
-              // En otras vistas, cargar usuarios normalmente
-              cargarUsuarios('', 1);
-            }
-          }}
-          disabled={(vistaActiva !== 'seguridad' && !filtros.id_empresa) || (vistaActiva === 'seguridad' ? (subSeccionSeg === 'masiva' ? loadingMasiva : loadingSeg) : loading.usuarios)}
-        >
-          {vistaActiva === 'seguridad'
-            ? (subSeccionSeg === 'masiva'
-                ? (loadingMasiva ? '⏳' : '🔍 Buscar usuarios')
-                : (loadingSeg ? '⏳' : '🔍 Consultar'))
-            : (loading.usuarios ? '⏳' : '🔍 Buscar')}
-        </button>
-        <button className="usr-topbar-clear" onClick={limpiarFiltros} title="Limpiar filtros">🧹</button>
+        {/* Botones de acción: ocultos en bitácora (tiene los suyos propios) */}
+        {vistaActiva !== 'bitacora' && (
+          <>
+            <button
+              className="usr-topbar-btn-buscar"
+              onClick={() => {
+                if (vistaActiva === 'seguridad') {
+                  if (subSeccionSeg === 'masiva') { buscarMasiva(); return; }
+                  consultarSeg();
+                  return;
+                }
+                if (!filtros.id_empresa) return;
+                if (vistaActiva === 'historial') {
+                  // En historial, llamar a la función buscar del componente
+                  historialEstadosRef.current?.buscar();
+                } else {
+                  // En otras vistas, cargar usuarios normalmente
+                  cargarUsuarios('', 1);
+                }
+              }}
+              disabled={(vistaActiva !== 'seguridad' && !filtros.id_empresa) || (vistaActiva === 'seguridad' ? (subSeccionSeg === 'masiva' ? loadingMasiva : loadingSeg) : loading.usuarios)}
+            >
+              {vistaActiva === 'seguridad'
+                ? (subSeccionSeg === 'masiva'
+                    ? (loadingMasiva ? '⏳' : '🔍 Buscar usuarios')
+                    : (loadingSeg ? '⏳' : '🔍 Consultar'))
+                : (loading.usuarios ? '⏳' : '🔍 Buscar')}
+            </button>
+            <button className="usr-topbar-clear" onClick={limpiarFiltros} title="Limpiar filtros">🧹</button>
+          </>
+        )}
       </div>
 
       {/* BODY: Sidebar + Content */}
@@ -3092,8 +3036,8 @@ function Usuarios() {
 
         {/* CONTENT */}
         <div className="usr-content">
-          {/* PANTALLA DE BIENVENIDA - cuando no hay empresa seleccionada y NO es historial ni seguridad */}
-          {!filtros.id_empresa && vistaActiva !== 'historial' && vistaActiva !== 'seguridad' && (
+          {/* PANTALLA DE BIENVENIDA - cuando no hay empresa seleccionada y NO es historial, seguridad ni bitácora */}
+          {!filtros.id_empresa && vistaActiva !== 'historial' && vistaActiva !== 'seguridad' && vistaActiva !== 'bitacora' && (
             <div className="usr-welcome-screen">
               <div className="usr-welcome-card">
                 <img src="/assets/Logo_Talkme.png" alt="TalkMe" className="usr-welcome-logo" />
@@ -4125,8 +4069,8 @@ function Usuarios() {
 
       {/* VISTA USUARIOS QRM */}
       {vistaActiva === 'qrm' && (
-        <UsuariosQRM 
-          dbKey={filtros.db_key} 
+        <UsuariosQRM
+          dbKey={filtros.db_key}
           idEmpresa={filtros.id_empresa}
           empresas={empresas}
           filtrosExternos={filtrosQRM}
@@ -4136,6 +4080,11 @@ function Usuarios() {
             setMarcasQRM(data.marcas);
           }}
         />
+      )}
+
+      {/* VISTA BITÁCORA ADMINISTRATIVA */}
+      {vistaActiva === 'bitacora' && (
+        <BitacoraAdministrativa />
       )}
 
 

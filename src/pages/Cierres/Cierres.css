@@ -5950,6 +5950,26 @@
   font-size: 12px;
 }
 
+.ci-ra-email-v2-file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--tm-surface);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--tm-text);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.ci-ra-email-v2-file-label:hover {
+  background: var(--tm-bg-hover);
+  border-color: var(--tm-border-strong);
+}
+
 .ci-ra-email-v2-signature-preview {
   padding: 12px;
   background: var(--tm-bg);
@@ -5962,6 +5982,60 @@
   max-width: 100%;
   max-height: 100px;
   border-radius: var(--tm-radius-sm);
+}
+
+.ci-ra-email-v2-activo-toggle {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.ci-ra-email-v2-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ci-ra-email-v2-toggle-checkbox {
+  display: none;
+}
+
+.ci-ra-email-v2-toggle-slider {
+  width: 44px;
+  height: 24px;
+  background: var(--tm-border);
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.ci-ra-email-v2-toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.ci-ra-email-v2-toggle-checkbox:checked + .ci-ra-email-v2-toggle-slider {
+  background: #16a34a;
+}
+
+.ci-ra-email-v2-toggle-checkbox:checked + .ci-ra-email-v2-toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.ci-ra-email-v2-toggle-text {
+  font-size: 12px;
+  color: var(--tm-text);
+  font-weight: 500;
 }
 
 /* Panel derecho - Preview */

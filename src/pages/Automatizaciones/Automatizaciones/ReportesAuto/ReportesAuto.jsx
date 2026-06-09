@@ -702,6 +702,38 @@ export default function ReportesAuto() {
     }
   };
 
+  const togglePlantillaActivo = async (idTemplate, activo) => {
+    try {
+      const res = await fetchWithAuth(API_URLS.schedulerToggleTemplateActivo(idTemplate), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activo })
+      });
+      
+      if (!res.ok) {
+        throw new Error('Error al cambiar estado de plantilla');
+      }
+      
+      const data = await res.json();
+      
+      // Actualizar estado local de la plantilla seleccionada
+      if (plantillaSeleccionada?.ID_TEMPLATE === idTemplate) {
+        setPlantillaSeleccionada({
+          ...plantillaSeleccionada,
+          ACTIVO: activo ? 1 : 0
+        });
+      }
+      
+      // Recargar lista de templates
+      await cargarTemplates();
+      
+      toast.success(activo ? 'Plantilla activada' : 'Plantilla desactivada');
+    } catch (err) {
+      console.error('Error al cambiar estado de plantilla:', err);
+      toast.error('Error al cambiar estado: ' + err.message);
+    }
+  };
+
   const agregarDestinatarioTemplate = () => {
     if (!nuevoDestinatarioTemplate.email) return toast.error('Ingresa un email');
     setTemplateActual(prev => ({
@@ -956,6 +988,20 @@ export default function ReportesAuto() {
                     {guardandoCambios ? '⏳ Guardando...' : '💾 Guardar'}
                   </button>
                   <button className="ci-ra-btn-v2-danger" onClick={eliminarPlantillaSeleccionada}>🗑️ Eliminar</button>
+                  <div className="ci-ra-email-v2-activo-toggle">
+                    <label className="ci-ra-email-v2-toggle-label">
+                      <input
+                        type="checkbox"
+                        checked={plantillaSeleccionada.ACTIVO === 1}
+                        onChange={(e) => togglePlantillaActivo(plantillaSeleccionada.ID_TEMPLATE, e.target.checked)}
+                        className="ci-ra-email-v2-toggle-checkbox"
+                      />
+                      <span className="ci-ra-email-v2-toggle-slider"></span>
+                      <span className="ci-ra-email-v2-toggle-text">
+                        {plantillaSeleccionada.ACTIVO === 1 ? 'Activa' : 'Inactiva'}
+                      </span>
+                    </label>
+                  </div>
                 </>
               )}
             </div>
@@ -1068,14 +1114,31 @@ export default function ReportesAuto() {
                   <div className="ci-ra-email-v2-signature">
                     <label className="ci-ra-email-v2-field-label">✒️ Firma (Imagen)</label>
                     <div className="ci-ra-email-v2-signature-upload">
-                      <input type="file" accept="image/*" onChange={cargarImagenFirma} className="ci-ra-email-v2-file-input" />
-                      {imagenFirmaPreview && (
-                        <button className="ci-ra-btn-v2-icon" onClick={() => setImagenFirmaPreview(null)} title="Quitar firma">🗑️ Quitar firma</button>
+                      <input
+                        type="text"
+                        className="ci-ra-email-v2-input"
+                        style={{ flex: 1, minWidth: '200px' }}
+                        value={imagenFirmaPreview || plantillaSeleccionada?.IMAGEN_FIRMA_PATH || ''}
+                        onChange={(e) => setImagenFirmaPreview(e.target.value)}
+                        placeholder="Ingresa URL de imagen (ej: https://s3...)"
+                      />
+                      <label className="ci-ra-email-v2-file-label">
+                        📁 Subir archivo
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={cargarImagenFirma}
+                          className="ci-ra-email-v2-file-input"
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                      {(imagenFirmaPreview || plantillaSeleccionada?.IMAGEN_FIRMA_PATH) && (
+                        <button className="ci-ra-btn-v2-icon" onClick={() => setImagenFirmaPreview(null)} title="Quitar firma">🗑️</button>
                       )}
                     </div>
-                    {imagenFirmaPreview && (
+                    {(imagenFirmaPreview || plantillaSeleccionada?.IMAGEN_FIRMA_PATH) && (
                       <div className="ci-ra-email-v2-signature-preview">
-                        <img src={imagenFirmaPreview} alt="Firma" className="ci-ra-email-v2-signature-img" />
+                        <img src={imagenFirmaPreview || plantillaSeleccionada?.IMAGEN_FIRMA_PATH} alt="Firma" className="ci-ra-email-v2-signature-img" />
                       </div>
                     )}
                   </div>

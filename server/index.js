@@ -29,6 +29,7 @@ const { router: usuariosQRMRoutes, initPools: initUsuariosQRMPools } = require('
 const { router: permisosUsuariosRoutes, initPools: initPermisosUsuariosPools } = require('./modules/permisosUsuarios');
 const { router: asignacionMasivaRoutes, initPools: initAsignacionMasivaPools } = require('./modules/asignacionMasiva');
 const { router: historialRoutes, initPools: initHistorialPools } = require('./modules/historial');
+const { router: bitacoraAdministrativaRoutes, initBitacoraAdministrativa } = require('./modules/bitacoraAdministrativa');
 
 const app = express();
 const port = 3001;
@@ -246,6 +247,10 @@ app.use('/', asignacionMasivaRoutes);
 // Inicializar módulo de historial de estados
 initHistorialPools(dbPools);
 app.use('/', historialRoutes);
+
+// Inicializar módulo de bitácora administrativa
+initBitacoraAdministrativa(dbPools);
+app.use('/', bitacoraAdministrativaRoutes);
 
 // 4. MANEJO DE ERRORES GLOBAL
 // Capturamos cualquier error inesperado para que el servidor no se caiga.

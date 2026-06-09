@@ -1285,4 +1285,16 @@ router.delete('/api/scheduler/templates/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// PUT /api/scheduler/templates/:id/activo
+router.put('/api/scheduler/templates/:id/activo', async (req, res) => {
+    try {
+        const { activo } = req.body;
+        if (typeof activo !== 'boolean') {
+            return res.status(400).json({ error: 'activo debe ser un boolean' });
+        }
+        const resultado = await emailService.toggleTemplateActivo(req.params.id, activo);
+        res.json(resultado);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = { router, ejecutarReportesScheduled, leerConfig, programarCron };

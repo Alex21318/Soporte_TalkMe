@@ -19,7 +19,7 @@ El editor se ubica en el lateral derecho de la pestaña **"Correo y Plantillas"*
 * **Asunto del Correo:** Asunto del mensaje. Permite la interpolación de variables encerradas entre llaves (ej: `Reporte de {TIPO_REPORTE} - {EMPRESA} {FECHA}`).
 * **Cuerpo HTML:** Editor de texto plano que interpreta marcas HTML para estructurar el contenido (negritas, listas, párrafos).
 * **Firma HTML:** Sección inferior para añadir el nombre del equipo de soporte o información legal en HTML.
-* **Logotipo o Imagen de Firma:** Selector de archivo de imagen local. La función `cargarImagenFirma` lee el archivo en el navegador, valida que no supere los 5 MB de tamaño, lo convierte a un string base64 (`DataURL`) y lo asigna al estado para enviarlo al servidor.
+* **Logotipo o Imagen de Firma:** Selector de archivo de imagen local o campo de texto para ingresar una URL externa (ej: S3). La función `cargarImagenFirma` lee el archivo en el navegador, valida que no supere los 5 MB de tamaño, lo convierte a un string base64 (`DataURL`) y lo asigna al estado para enviarlo al servidor. Alternativamente, se puede ingresar directamente una URL (http/https) que será usada directamente en el HTML del correo sin necesidad de adjuntar el archivo.
 * **Adjuntos (Reportes):** Lista de checkboxes que mapea las reglas de descarga configuradas. El usuario marca qué reportes de la base de datos se deben adjuntar a esta plantilla de correo.
 * **Destinatarios Locales:** Tabla para agregar correos (`PARA`, `CC`, `CCO`) específicos para esta plantilla de correo, almacenándolos en memoria en el estado `editandoDestinatarios` antes de persistir los cambios.
 

@@ -2875,7 +2875,8 @@ router.get('/api/plantillas-whatsapp', async (req, res) => {
                 PC.ETIQUETA AS ETIQUETA_CATEGORIA,
                 PW.ID_PLANTILLA,
                 PW.ID_INTERNO,
-                PW.NOMBRE AS NOMBRE_PLANTILLA,
+                PW.NOMBRE_PLANTILLA AS NOMBRE_PLANTILLA,
+                PW.NOMBRE AS NOMBRE,
                 PW.MENSAJE AS MENSAJE_ORIGINAL,
                 PW.ESTADO,
                 PW.ESTADO_GUPSHUP,
@@ -2983,7 +2984,7 @@ router.get('/api/plantillas-whatsapp', async (req, res) => {
                 nombre_categoria: row.NOMBRE_CATEGORIA,
                 etiqueta_categoria: row.ETIQUETA_CATEGORIA,
                 nombre_plantilla: row.NOMBRE_PLANTILLA,
-                nombre: row.NOMBRE_PLANTILLA,
+                nombre: row.NOMBRE,
                 mensaje_original: row.MENSAJE_ORIGINAL,
                 mensaje_mapeado: mensaje_mapeado,
                 estado: row.ESTADO,
@@ -3022,10 +3023,11 @@ router.get('/api/plantillas-whatsapp/export', async (req, res) => {
         const dbDestino = pools[db_key];
         
         const query = `
-            SELECT 
+            SELECT
                 PW.ID_PLANTILLA,
                 PW.ID_INTERNO,
-                PW.NOMBRE AS NOMBRE_PLANTILLA,
+                PW.NOMBRE_PLANTILLA AS NOMBRE_PLANTILLA,
+                PW.NOMBRE AS NOMBRE,
                 PC.CATEGORIA AS CATEGORIA,
                 PW.ESTADO,
                 PW.ESTADO_GUPSHUP,
@@ -3063,7 +3065,7 @@ router.get('/api/plantillas-whatsapp/export', async (req, res) => {
         const data = rows.map(r => ({
             'ID Plantilla': r.ID_PLANTILLA,
             'ID Interno': r.ID_INTERNO,
-            'Nombre': r.NOMBRE_PLANTILLA,
+            'Nombre': r.NOMBRE,
             'Categoría': r.CATEGORIA,
             'Estado': r.ESTADO === 1 ? 'Activo' : 'Inactivo',
             'Estado Gupshup': ['DELETED', 'APPROVED', 'PENDING', 'REJECTED', 'FAILED'][r.ESTADO_GUPSHUP] || 'UNKNOWN',

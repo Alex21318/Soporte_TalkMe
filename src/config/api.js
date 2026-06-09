@@ -232,6 +232,7 @@ export const API_URLS = {
   schedulerCrearTemplate: () => `${API_BASE_URL}/api/scheduler/templates`,
   schedulerActualizarTemplate: (id) => `${API_BASE_URL}/api/scheduler/templates/${id}`,
   schedulerEliminarTemplate: (id) => `${API_BASE_URL}/api/scheduler/templates/${id}`,
+  schedulerToggleTemplateActivo: (id) => `${API_BASE_URL}/api/scheduler/templates/${id}/activo`,
   
   // Plantillas WhatsApp
   plantillasWhatsApp: () => `${API_BASE_URL}/api/plantillas-whatsapp`,
@@ -275,6 +276,26 @@ export const API_URLS = {
   horariosBotCrear: () => `${API_BASE_URL}/api/horarios-bot`,
   horariosBotActualizar: (id) => `${API_BASE_URL}/api/horarios-bot/${id}`,
   horariosBotEliminar: (id, db_key) => `${API_BASE_URL}/api/horarios-bot/${id}?db_key=${db_key}`,
+
+  // Bitácora Administrativa
+  bitacoraAdministrativa: (params = {}) => {
+    let url = `${API_BASE_URL}/api/bitacora-administrativa`;
+    const query = [];
+    if (params.db_key) query.push(`db_key=${params.db_key}`);
+    if (params.id_empresa) query.push(`id_empresa=${params.id_empresa}`);
+    if (params.empresa) query.push(`empresa=${encodeURIComponent(params.empresa)}`);
+    if (params.subgrupo) query.push(`subgrupo=${encodeURIComponent(params.subgrupo)}`);
+    if (params.categoria) query.push(`categoria=${encodeURIComponent(params.categoria)}`);
+    if (params.descripcion) query.push(`descripcion=${encodeURIComponent(params.descripcion)}`);
+    if (params.creado_por) query.push(`creado_por=${encodeURIComponent(params.creado_por)}`);
+    if (params.fecha_inicio) query.push(`fecha_inicio=${params.fecha_inicio}`);
+    if (params.fecha_fin) query.push(`fecha_fin=${params.fecha_fin}`);
+    if (params.limit) query.push(`limit=${params.limit}`);
+    if (params.offset) query.push(`offset=${params.offset}`);
+    if (query.length > 0) url += '?' + query.join('&');
+    return url;
+  },
+  bitacoraAdministrativaFiltros: (db_key) => `${API_BASE_URL}/api/bitacora-administrativa/filtros?db_key=${db_key}`,
 };
 
 export default API_BASE_URL;

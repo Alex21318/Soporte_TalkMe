@@ -66,8 +66,17 @@ async function generarCuerpoEmail(config, fechaFormateada, attachmentsInfo) {
     
     // Si hay imagen de firma, agregarla
     let imagenHtml = '';
-    if (config.imagenFirmaPath && fs.existsSync(config.imagenFirmaPath)) {
-        imagenHtml = `<div style="margin-top:10px;"><img src="cid:firma-image" style="max-width:600px;" /></div>`;
+    if (config.imagenFirmaPath) {
+        // Detectar si es una URL (http/https) o una ruta local
+        const esUrl = config.imagenFirmaPath.startsWith('http://') || config.imagenFirmaPath.startsWith('https://');
+        
+        if (esUrl) {
+            // Usar URL directamente en el HTML
+            imagenHtml = `<div style="margin-top:10px;"><img src="${config.imagenFirmaPath}" style="max-width:600px;" /></div>`;
+        } else if (fs.existsSync(config.imagenFirmaPath)) {
+            // Usar archivo local como attachment con CID
+            imagenHtml = `<div style="margin-top:10px;"><img src="cid:firma-image" style="max-width:600px;" /></div>`;
+        }
     }
     
     return `<!DOCTYPE html>
@@ -187,13 +196,16 @@ async function enviarReportePorEmail({ destinatarios, asunto, mensaje, attachmen
             return attachment;
         });
 
-        // Agregar imagen de firma si existe
-        if (config.imagenFirmaPath && fs.existsSync(config.imagenFirmaPath)) {
-            emailAttachments.push({
-                filename: 'firma.png',
-                path: config.imagenFirmaPath,
-                cid: 'firma-image'
-            });
+        // Agregar imagen de firma si existe y es un archivo local (no URL)
+        if (config.imagenFirmaPath) {
+            const esUrl = config.imagenFirmaPath.startsWith('http://') || config.imagenFirmaPath.startsWith('https://');
+            if (!esUrl && fs.existsSync(config.imagenFirmaPath)) {
+                emailAttachments.push({
+                    filename: 'firma.png',
+                    path: config.imagenFirmaPath,
+                    cid: 'firma-image'
+                });
+            }
         }
 
         // Construir direcciones para envío
@@ -777,6 +789,16 @@ async function eliminarTemplate(idTemplate) {
     }
 }
 
+async function toggleTemplateActivo(idTemplate, activo) {
+    try {
+        await db.query('UPDATE SCHEDULER_EMAIL_TEMPLATES SET ACTIVO = ? WHERE ID_TEMPLATE = ?', [activo ? 1 : 0, idTemplate]);
+        return { ok: true, activo };
+    } catch (err) {
+        console.error('[EmailService] Error cambiando estado de template:', err.message);
+        throw err;
+    }
+}
+
 // ==========================================================================
 // OBTENER PLANTILLAS COMPLETAS PARA ENVÍO (con destinatarios y reportes)
 // ==========================================================================
@@ -861,5 +883,6 @@ module.exports = {
     obtenerTemplate,
     listarTemplates,
     eliminarTemplate,
+    toggleTemplateActivo,
     obtenerPlantillasParaEnvio
 };

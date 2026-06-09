@@ -162,7 +162,7 @@ Gestión de skills (colas de atención), horarios y permisos de usuarios.
 
 ## 👥 Módulo: Usuarios
 Gestión completa de usuarios, permisos, seguridad y estados de plataforma.
-* **Código Frontend:** [Usuarios.jsx](file:///d:/Proyectos/Soporte_TalkMe/src/pages/Usuarios/Usuarios.jsx) | [aSeguridad.jsx](file:///d:/Proyectos/Soporte_TalkMe/src/pages/Usuarios/aSeguridad.jsx) | [UsuariosQRM.jsx](file:///d:/Proyectos/Soporte_TalkMe/src/pages/Usuarios/UsuariosQRM.jsx) | [SistemaUsuarios.jsx](file:///d:/Proyectos/Soporte_TalkMe/src/pages/Usuarios/SistemaUsuarios.jsx)
+* **Código Frontend:** [Usuarios.jsx](file:///d:/Proyectos/Soporte_TalkMe/src/pages/Usuarios/Usuarios.jsx) | [aSeguridad.jsx](file:///d:/Proyectos/Soporte_TalkMe/src/pages/Usuarios/aSeguridad.jsx) | [UsuariosQRM.jsx](file:///d:/Proyectos/Soporte_TalkMe/src/pages/Usuarios/UsuariosQRM.jsx) | [SistemaUsuarios.jsx](file:///d:/Proyectos/Soporte_TalkMe/src/pages/Usuarios/SistemaUsuarios.jsx) | [BitacoraAdministrativa.jsx](file:///d:/Proyectos/Soporte_TalkMe/src/pages/Usuarios/BitacoraAdministrativa.jsx)
 * **Carpeta de Documentación:** [Usuarios/](file:///d:/Proyectos/Soporte_TalkMe/Contexto/Usuarios/)
 * **Funcionalidades Documentadas:**
   * [Revisar permisos de un usuario](file:///d:/Proyectos/Soporte_TalkMe/Contexto/Usuarios/revisar_permisos_usuario.md)
@@ -173,6 +173,7 @@ Gestión completa de usuarios, permisos, seguridad y estados de plataforma.
   * [Vista QRM (gestión por sociedad/marca)](file:///d:/Proyectos/Soporte_TalkMe/Contexto/Usuarios/vista_qrm.md)
   * [Seguridad (perfiles y accesos)](file:///d:/Proyectos/Soporte_TalkMe/Contexto/Usuarios/seguridad.md)
   * [Sistema de Usuarios (gestión interna)](file:///d:/Proyectos/Soporte_TalkMe/Contexto/Usuarios/sistema_usuarios.md)
+  * [Bitácora Administrativa (historial de cambios de permisos)](file:///d:/Proyectos/Soporte_TalkMe/Contexto/Usuarios/bitacora_administrativa.md)
 
 ---
 
