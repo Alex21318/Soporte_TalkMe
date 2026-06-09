@@ -67,14 +67,12 @@ async function generarCuerpoEmail(config, fechaFormateada, attachmentsInfo) {
     // Si hay imagen de firma, agregarla
     let imagenHtml = '';
     if (config.imagenFirmaPath) {
-        // Detectar si es una URL (http/https) o una ruta local
         const esUrl = config.imagenFirmaPath.startsWith('http://') || config.imagenFirmaPath.startsWith('https://');
-        
+        const esBase64 = config.imagenFirmaPath.startsWith('data:image/');
+
         if (esUrl) {
-            // Usar URL directamente en el HTML
             imagenHtml = `<div style="margin-top:10px;"><img src="${config.imagenFirmaPath}" style="max-width:600px;" /></div>`;
-        } else if (fs.existsSync(config.imagenFirmaPath)) {
-            // Usar archivo local como attachment con CID
+        } else if (esBase64 || (typeof config.imagenFirmaPath === 'string' && fs.existsSync(config.imagenFirmaPath))) {
             imagenHtml = `<div style="margin-top:10px;"><img src="cid:firma-image" style="max-width:600px;" /></div>`;
         }
     }
@@ -196,15 +194,30 @@ async function enviarReportePorEmail({ destinatarios, asunto, mensaje, attachmen
             return attachment;
         });
 
-        // Agregar imagen de firma si existe y es un archivo local (no URL)
+        // Agregar imagen de firma si existe y es un archivo local o base64 (no URL)
         if (config.imagenFirmaPath) {
             const esUrl = config.imagenFirmaPath.startsWith('http://') || config.imagenFirmaPath.startsWith('https://');
-            if (!esUrl && fs.existsSync(config.imagenFirmaPath)) {
-                emailAttachments.push({
-                    filename: 'firma.png',
-                    path: config.imagenFirmaPath,
-                    cid: 'firma-image'
-                });
+            const esBase64 = config.imagenFirmaPath.startsWith('data:image/');
+
+            if (!esUrl) {
+                if (esBase64) {
+                    const matches = config.imagenFirmaPath.match(/^data:([^;]+);base64,(.+)$/);
+                    if (matches) {
+                        emailAttachments.push({
+                            filename: 'firma.png',
+                            content: Buffer.from(matches[2], 'base64'),
+                            contentType: matches[1],
+                            encoding: 'base64',
+                            cid: 'firma-image'
+                        });
+                    }
+                } else if (fs.existsSync(config.imagenFirmaPath)) {
+                    emailAttachments.push({
+                        filename: 'firma.png',
+                        path: config.imagenFirmaPath,
+                        cid: 'firma-image'
+                    });
+                }
             }
         }
 
@@ -726,7 +739,7 @@ async function actualizarTemplate(idTemplate, { nombre, asunto, cuerpoHtml, firm
 async function obtenerTemplate(idTemplate) {
     try {
         const [[template]] = await db.query(`
-            SELECT * FROM SCHEDULER_EMAIL_TEMPLATES WHERE ID_TEMPLATE = ? AND ACTIVO = 1
+            SELECT * FROM SCHEDULER_EMAIL_TEMPLATES WHERE ID_TEMPLATE = ?
         `, [idTemplate]);
         
         if (!template) return null;
@@ -768,9 +781,9 @@ async function listarTemplates(idJob) {
             FROM SCHEDULER_EMAIL_TEMPLATES t
             LEFT JOIN SCHEDULER_TEMPLATE_REPORTES tr ON t.ID_TEMPLATE = tr.ID_TEMPLATE
             LEFT JOIN SCHEDULER_TEMPLATE_DESTINATARIOS td ON t.ID_TEMPLATE = td.ID_TEMPLATE AND td.ACTIVO = 1
-            WHERE t.ID_JOB = ? AND t.ACTIVO = 1
+            WHERE t.ID_JOB = ?
             GROUP BY t.ID_TEMPLATE
-            ORDER BY t.CREADO_EL DESC
+            ORDER BY t.ACTIVO DESC, t.CREADO_EL DESC
         `, [idJob]);
         return templates;
     } catch (err) {

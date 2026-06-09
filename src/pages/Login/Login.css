@@ -335,8 +335,11 @@
   justify-content: center;
   gap: 10px;
   width: 100%;
-  min-width: 0;
+  min-width: 100%;
+  height: 50px;
   padding: 14px 24px;
+  box-sizing: border-box;
+  overflow: hidden;
   background: linear-gradient(135deg, var(--tm-primary-500) 0%, var(--tm-primary-500) 100%);
   color: white;
   border: none;
@@ -380,6 +383,7 @@
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  box-sizing: border-box;
 }
 
 @keyframes spin {
@@ -450,4 +454,120 @@
 /* Asegurar que el body tenga la fuente correcta */
 body {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ==========================================
+   CREDENTIAL MANAGER (Chrome-like)
+   ========================================== */
+.ci-credential-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ci-user-input {
+  padding-right: 40px !important;
+}
+
+.ci-credential-chevron {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  border-radius: 8px;
+  transition: all 0.15s;
+  z-index: 2;
+}
+
+.ci-credential-chevron:hover {
+  color: var(--tm-primary-500);
+  background: rgba(var(--tm-primary-rgb-500), 0.08);
+}
+
+.ci-credential-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  max-height: 200px;
+  overflow-y: auto;
+  animation: dropFadeIn 0.15s ease-out;
+}
+
+@keyframes dropFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ci-credential-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ci-credential-item:last-child {
+  border-bottom: none;
+}
+
+.ci-credential-item:hover {
+  background: #f8fafc;
+}
+
+.ci-credential-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.ci-credential-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  border-radius: 6px;
+  transition: all 0.15s;
+  opacity: 0;
+}
+
+.ci-credential-item:hover .ci-credential-delete {
+  opacity: 1;
+}
+
+.ci-btn-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 20px;
+}
+
+.ci-credential-delete:hover {
+  color: #ef4444;
+  background: #fef2f2;
 }

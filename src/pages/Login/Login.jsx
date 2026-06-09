@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { API_URLS } from '../../config/api';
 import { fetchWithAuth } from '../../utils/fetchWithAuth';
 import './Login.css';
@@ -41,6 +41,19 @@ const IconRocket = () => (
   </svg>
 );
 
+const IconChevronDown = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
+const IconTrash = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+  </svg>
+);
+
 const IconAlert = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
@@ -58,12 +71,77 @@ function Login({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [savedUsers, setSavedUsers] = useState([]);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
 
-  // Cargar usuario recordado al montar (usar sessionStorage por seguridad)
+  // Cargar lista de usuarios guardados y auto-completar el último
   useEffect(() => {
-    const rememberedUser = sessionStorage.getItem('remembered_user');
-    if (rememberedUser) {
-      setFormData(prev => ({ ...prev, usuario: rememberedUser, rememberMe: true }));
+    async function loadSaved() {
+      if (window.electronAPI?.listarUsuarios) {
+        try {
+          const { usuarios, ultimo } = await window.electronAPI.listarUsuarios();
+          setSavedUsers(usuarios || []);
+          if (ultimo && Array.isArray(usuarios) && usuarios.includes(ultimo)) {
+            const creds = await window.electronAPI.cargarCredenciales();
+            if (creds) {
+              setFormData(prev => ({
+                ...prev,
+                usuario: creds.usuario,
+                password: creds.password,
+                rememberMe: true
+              }));
+              return;
+            }
+          }
+        } catch (_) { /* ignorar */ }
+      }
+      // Fallback sessionStorage
+      const rememberedUser = sessionStorage.getItem('remembered_user');
+      if (rememberedUser) {
+        setFormData(prev => ({ ...prev, usuario: rememberedUser, rememberMe: true }));
+      }
+    }
+    loadSaved();
+  }, []);
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setShowUserMenu(false);
+      }
+    }
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showUserMenu]);
+
+  const seleccionarUsuario = useCallback(async (usuario) => {
+    setShowUserMenu(false);
+    if (window.electronAPI?.cargarCredenciales) {
+      try {
+        const creds = await window.electronAPI.cargarCredenciales(usuario);
+        if (creds) {
+          setFormData(prev => ({
+            ...prev,
+            usuario: creds.usuario,
+            password: creds.password,
+            rememberMe: true
+          }));
+        }
+      } catch (_) { /* ignorar */ }
+    }
+  }, []);
+
+  const eliminarUsuarioGuardado = useCallback(async (usuario, e) => {
+    e.stopPropagation();
+    if (window.electronAPI?.eliminarCredenciales) {
+      await window.electronAPI.eliminarCredenciales(usuario);
+      const { usuarios } = await window.electronAPI.listarUsuarios();
+      setSavedUsers(usuarios || []);
+      if (usuarios.length === 0) setShowUserMenu(false);
     }
   }, []);
 
@@ -120,10 +198,25 @@ function Login({ onLoginSuccess }) {
         sessionStorage.setItem('user_permissions', JSON.stringify(data.user.permissions));
       }
 
-      // Manejar "Recordarme" (usar sessionStorage por seguridad)
+      // Guardar/eliminar credenciales según "Recordar contraseña"
       if (formData.rememberMe) {
+        if (window.electronAPI?.guardarCredenciales) {
+          window.electronAPI.guardarCredenciales({
+            usuario: formData.usuario.trim(),
+            password: formData.password
+          }).then(async () => {
+            const { usuarios } = await window.electronAPI.listarUsuarios();
+            setSavedUsers(usuarios || []);
+          }).catch(() => {});
+        }
         sessionStorage.setItem('remembered_user', formData.usuario.trim());
       } else {
+        if (window.electronAPI?.eliminarCredenciales) {
+          window.electronAPI.eliminarCredenciales(formData.usuario.trim()).then(async () => {
+            const { usuarios } = await window.electronAPI.listarUsuarios();
+            setSavedUsers(usuarios || []);
+          }).catch(() => {});
+        }
         sessionStorage.removeItem('remembered_user');
       }
 
@@ -164,25 +257,54 @@ function Login({ onLoginSuccess }) {
 
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="login-form-modern">
-            {/* Campo Usuario */}
+            {/* Campo Usuario con selector de credenciales guardadas */}
             <div className="input-wrapper">
               <label className="input-label">
                 <span className="label-icon"><IconUser /></span>
                 Usuario
               </label>
-              <div className="input-container">
-                <input
-                  type="text"
-                  name="usuario"
-                  value={formData.usuario}
-                  onChange={handleChange}
-                  placeholder="Ingrese su usuario"
-                  className={`modern-input ${error ? 'input-error' : ''}`}
-                  disabled={loading}
-                  autoComplete="username"
-                  autoFocus
-                />
+              <div className="input-container" ref={userMenuRef}>
+                <div className="ci-credential-input-wrap">
+                  <input
+                    type="text"
+                    name="usuario"
+                    value={formData.usuario}
+                    onChange={handleChange}
+                    placeholder="Ingrese su usuario"
+                    className={`modern-input ci-user-input ${error ? 'input-error' : ''}`}
+                    disabled={loading}
+                    autoComplete="username"
+                    autoFocus
+                  />
+                  {savedUsers.length > 0 && (
+                    <button
+                      type="button"
+                      className="ci-credential-chevron"
+                      onClick={() => setShowUserMenu(prev => !prev)}
+                      tabIndex={-1}
+                    >
+                      <IconChevronDown />
+                    </button>
+                  )}
+                </div>
                 <div className="input-focus-line"></div>
+                {showUserMenu && savedUsers.length > 0 && (
+                  <div className="ci-credential-dropdown">
+                    {savedUsers.map(u => (
+                      <div key={u} className="ci-credential-item" onClick={() => seleccionarUsuario(u)}>
+                        <span className="ci-credential-name">{u}</span>
+                        <button
+                          type="button"
+                          className="ci-credential-delete"
+                          onClick={(e) => eliminarUsuarioGuardado(u, e)}
+                          title="Eliminar credenciales guardadas"
+                        >
+                          <IconTrash />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -244,17 +366,19 @@ function Login({ onLoginSuccess }) {
               className={`btn-login-modern ${loading ? 'loading' : ''}`}
               disabled={loading}
             >
-              {loading ? (
-                <>
-                  <span className="spinner"></span>
-                  Iniciando sesión...
-                </>
-              ) : (
-                <>
-                  <span className="btn-icon"><IconRocket /></span>
-                  Ingresar al Sistema
-                </>
-              )}
+              <span className="ci-btn-inner">
+                {loading ? (
+                  <>
+                    <span className="spinner"></span>
+                    Iniciando sesión...
+                  </>
+                ) : (
+                  <>
+                    <span className="btn-icon"><IconRocket /></span>
+                    Ingresar al Sistema
+                  </>
+                )}
+              </span>
             </button>
           </form>
 

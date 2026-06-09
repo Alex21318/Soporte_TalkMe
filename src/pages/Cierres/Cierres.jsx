@@ -1956,7 +1956,7 @@ function ContenidoReportesAuto() {
       const payload = {
         nombre: plantillaSeleccionada.NOMBRE_TEMPLATE,
         asunto: editandoAsunto,
-        cuerpo_html: editandoCuerpo,
+        cuerpo_html: limpiarHTML(editandoCuerpo),
         firma_html: editandoFirma,
         imagen_firma_path: imagenFirmaPreview || '',
         reportes: editandoReportes,
@@ -2015,6 +2015,35 @@ function ContenidoReportesAuto() {
     }
   };
 
+  // Función para limpiar HTML del contenteditable
+  const limpiarHTML = (html) => {
+    // Reemplazar &nbsp; con espacio normal
+    let limpio = html.replace(/&nbsp;/g, ' ');
+    // Convertir saltos de línea en <br> tags
+    limpio = limpio.replace(/\n/g, '<br>');
+    // Reemplazar múltiples espacios con un solo espacio (pero no dentro de tags)
+    limpio = limpio.replace(/([^>])\s+([^<])/g, '$1 $2');
+    return limpio;
+  };
+
+  // Función para insertar variable en la posición del cursor del contenteditable
+  const insertarVariable = (texto) => {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      const textNode = document.createTextNode(texto);
+      range.insertNode(textNode);
+      range.setStartAfter(textNode);
+      range.setEndAfter(textNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      setEditandoCuerpo(document.querySelector('.ci-ra-email-v2-textarea').innerHTML);
+    } else {
+      setEditandoCuerpo(editandoCuerpo + texto);
+    }
+  };
+
   // Función para activar/desactivar plantilla
   const togglePlantillaActivo = async (idTemplate, activo) => {
     try {
@@ -2038,7 +2067,8 @@ function ContenidoReportesAuto() {
         });
       }
       
-      // Recargar lista de templates
+      // Recargar lista de templates pero mantener la plantilla seleccionada
+      const plantillaId = plantillaSeleccionada?.ID_TEMPLATE;
       await cargarTemplates();
       
       toast.success(activo ? 'Plantilla activada' : 'Plantilla desactivada');
@@ -2616,7 +2646,7 @@ function ContenidoReportesAuto() {
                   </option>
                   {templates.map(t => (
                     <option key={t.ID_TEMPLATE} value={t.ID_TEMPLATE}>
-                      {t.NOMBRE_TEMPLATE} ({t.CANT_DESTINATARIOS || 0} destinatarios)
+                      {t.ACTIVO === 1 ? '✅' : '🔒'} {t.NOMBRE_TEMPLATE} ({t.CANT_DESTINATARIOS || 0} destinatarios)
                     </option>
                   ))}
                 </select>
@@ -2851,17 +2881,19 @@ function ContenidoReportesAuto() {
                         <button className="ci-ra-email-v2-toolbar-btn" onClick={() => document.execCommand('underline')}>U</button>
                         <span className="ci-ra-email-v2-toolbar-sep"></span>
                         <div className="ci-ra-email-v2-toolbar-vars">
-                          <button className="ci-ra-email-v2-toolbar-var" onClick={() => setEditandoCuerpo(editandoCuerpo + '{FECHA}')}>{'{FECHA}'}</button>
-                          <button className="ci-ra-email-v2-toolbar-var" onClick={() => setEditandoCuerpo(editandoCuerpo + '{TIPO_REPORTE}')}>{'{TIPO}'}</button>
-                          <button className="ci-ra-email-v2-toolbar-var" onClick={() => setEditandoCuerpo(editandoCuerpo + '{EMPRESA}')}>{'{EMPRESA}'}</button>
+                          <button className="ci-ra-email-v2-toolbar-var" onClick={() => insertarVariable('{FECHA}')}>{'{FECHA}'}</button>
+                          <button className="ci-ra-email-v2-toolbar-var" onClick={() => insertarVariable('{TIPO_REPORTE}')}>{'{TIPO}'}</button>
+                          <button className="ci-ra-email-v2-toolbar-var" onClick={() => insertarVariable('{EMPRESA}')}>{'{EMPRESA}'}</button>
                         </div>
                       </div>
-                      <textarea
+                      <div
                         className="ci-ra-email-v2-textarea"
-                        value={editandoCuerpo}
-                        onChange={(e) => setEditandoCuerpo(e.target.value)}
+                        contentEditable={true}
+                        suppressContentEditableWarning={true}
+                        onInput={(e) => setEditandoCuerpo(e.target.innerHTML)}
+                        dangerouslySetInnerHTML={{ __html: editandoCuerpo }}
                         placeholder="Escribe el cuerpo del correo..."
-                        rows={8}
+                        style={{ minHeight: '200px' }}
                       />
                     </div>
                   </div>

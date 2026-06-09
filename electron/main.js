@@ -1,5 +1,6 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, safeStorage } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const cron = require('node-cron');
 
 // 🔴 Encendemos el servidor principal que contiene Diagramas y Skills
@@ -148,6 +149,90 @@ function createWindow() {
     }, 1000);
   });
 }
+
+// ── Ruta y helpers para credenciales cifradas ────────────────────────────────
+function getCredentialsPath() {
+  return path.join(app.getPath('userData'), 'credenciales.json');
+}
+
+function readCredFile() {
+  const fp = getCredentialsPath();
+  if (!fs.existsSync(fp)) return { usuarios: {}, ultimo: null };
+  const raw = JSON.parse(fs.readFileSync(fp, 'utf8'));
+  // Migrar desde formato anterior (un solo usuario)
+  if (raw && raw.usuario && !raw.usuarios) {
+    const migrated = { usuarios: { [raw.usuario]: { password: raw.password } }, ultimo: raw.usuario };
+    writeCredFile(migrated);
+    return migrated;
+  }
+  if (!raw || !raw.usuarios) return { usuarios: {}, ultimo: null };
+  return raw;
+}
+
+function writeCredFile(data) {
+  fs.writeFileSync(getCredentialsPath(), JSON.stringify(data), 'utf8');
+}
+
+// ── IPC: guardar credenciales de un usuario (multi-usuario) ───────────────────
+ipcMain.handle('guardar-credenciales', async (_event, { usuario, password }) => {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) return false;
+    const encrypted = safeStorage.encryptString(password).toString('hex');
+    const data = readCredFile();
+    data.usuarios[usuario] = { password: encrypted };
+    data.ultimo = usuario;
+    writeCredFile(data);
+    return true;
+  } catch (err) {
+    console.error('[Credenciales] Error al guardar:', err.message);
+    return false;
+  }
+});
+
+// ── IPC: cargar credenciales de un usuario específico o del último usado ──────
+ipcMain.handle('cargar-credenciales', async (_event, usuario) => {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) return null;
+    const data = readCredFile();
+    const target = usuario || data.ultimo;
+    if (!target || !data.usuarios[target]) return null;
+    const password = safeStorage.decryptString(Buffer.from(data.usuarios[target].password, 'hex'));
+    return { usuario: target, password };
+  } catch (err) {
+    console.error('[Credenciales] Error al cargar:', err.message);
+    return null;
+  }
+});
+
+// ── IPC: listar usuarios guardados ────────────────────────────────────────────
+ipcMain.handle('listar-usuarios', async () => {
+  try {
+    const data = readCredFile();
+    return { usuarios: Object.keys(data.usuarios), ultimo: data.ultimo };
+  } catch (err) {
+    console.error('[Credenciales] Error al listar:', err.message);
+    return { usuarios: [], ultimo: null };
+  }
+});
+
+// ── IPC: eliminar credenciales de un usuario específico o todos ───────────────
+ipcMain.handle('eliminar-credenciales', async (_event, usuario) => {
+  try {
+    const data = readCredFile();
+    if (usuario) {
+      delete data.usuarios[usuario];
+      if (data.ultimo === usuario) data.ultimo = Object.keys(data.usuarios)[0] || null;
+    } else {
+      data.usuarios = {};
+      data.ultimo = null;
+    }
+    writeCredFile(data);
+    return true;
+  } catch (err) {
+    console.error('[Credenciales] Error al eliminar:', err.message);
+    return false;
+  }
+});
 
 // ── IPC: abrir selector de carpeta nativo ─────────────────────────────────────
 ipcMain.handle('seleccionar-carpeta', async () => {

@@ -452,6 +452,21 @@ export default function ReportesAuto() {
   const [nuevoCco, setNuevoCco] = useState({ email: '', nombre: '' });
   const [guardandoCambios, setGuardandoCambios] = useState(false);
   const [imagenFirmaPreview, setImagenFirmaPreview] = useState(null);
+  const [mostrarCCO, setMostrarCCO] = useState(false);
+
+  function formatearTexto(tag) {
+    console.log('formatearTexto', tag);
+    const ta = document.querySelector('.ci-ra-email-v2-textarea');
+    if (!ta) { console.log('textarea no encontrado'); return; }
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = editandoCuerpo.substring(start, end);
+    if (selected) {
+      setEditandoCuerpo(editandoCuerpo.substring(0, start) + '<' + tag + '>' + selected + '</' + tag + '>' + editandoCuerpo.substring(end));
+    } else {
+      setEditandoCuerpo(editandoCuerpo + '<' + tag + '></' + tag + '>');
+    }
+  }
 
   const cargarConfig = async (silencioso = false) => {
     if (!silencioso) setLoading(true);
@@ -519,6 +534,8 @@ export default function ReportesAuto() {
       toast.error('Error al cargar detalle de plantilla');
     }
   };
+
+  
 
   // Seleccionar primera plantilla automáticamente cuando se carguen las templates
   useEffect(() => {
@@ -652,7 +669,7 @@ export default function ReportesAuto() {
         id_job: config.id_job,
         nombre: plantillaSeleccionada.NOMBRE_TEMPLATE,
         asunto: editandoAsunto,
-        cuerpo_html: editandoCuerpo,
+        cuerpo_html: limpiarHTML(editandoCuerpo),
         firma_html: plantillaSeleccionada.FIRMA_HTML || '',
         imagen_firma_path: imagenFirmaPreview,
         reportes: editandoReportes,
@@ -699,6 +716,35 @@ export default function ReportesAuto() {
       cargarTemplates();
     } catch (e) {
       toast.error('Error al eliminar plantilla: ' + e.message);
+    }
+  };
+
+  // Función para limpiar HTML del contenteditable
+  const limpiarHTML = (html) => {
+    // Reemplazar &nbsp; con espacio normal
+    let limpio = html.replace(/&nbsp;/g, ' ');
+    // Convertir saltos de línea en <br> tags
+    limpio = limpio.replace(/\n/g, '<br>');
+    // Reemplazar múltiples espacios con un solo espacio (pero no dentro de tags)
+    limpio = limpio.replace(/([^>])\s+([^<])/g, '$1 $2');
+    return limpio;
+  };
+
+  // Función para insertar variable en la posición del cursor del contenteditable
+  const insertarVariable = (texto) => {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      const textNode = document.createTextNode(texto);
+      range.insertNode(textNode);
+      range.setStartAfter(textNode);
+      range.setEndAfter(textNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      setEditandoCuerpo(document.querySelector('.ci-ra-email-v2-textarea').innerHTML);
+    } else {
+      setEditandoCuerpo(editandoCuerpo + texto);
     }
   };
 
@@ -959,7 +1005,7 @@ export default function ReportesAuto() {
                   </option>
                   {templates.map(t => (
                     <option key={t.ID_TEMPLATE} value={t.ID_TEMPLATE}>
-                      {t.NOMBRE_TEMPLATE} ({t.CANT_DESTINATARIOS || 0} destinatarios)
+                      {t.ACTIVO === 1 ? '✅' : '🔒'} {t.NOMBRE_TEMPLATE} ({t.CANT_DESTINATARIOS || 0} destinatarios)
                     </option>
                   ))}
                 </select>
@@ -1020,46 +1066,40 @@ export default function ReportesAuto() {
                   </div>
 
                   <div className="ci-ra-email-v2-dest-section">
-                    {/* PARA */}
                     <div className="ci-ra-email-v2-dest-row">
                       <label className="ci-ra-email-v2-dest-label">Para</label>
-                      <div className="ci-ra-email-v2-dest-input-wrapper">
-                        <div className="ci-ra-email-v2-recipients-container">
-                          {editandoDestinatarios.filter(d => d.tipo === 'PARA').map((d) => (
-                            <span key={d.id} className="ci-ra-email-v2-chip ci-ra-email-v2-chip-para">
-                              <span className="ci-ra-email-v2-chip-name">{d.nombre || d.email}</span>
-                              <span className="ci-ra-email-v2-chip-email">&lt;{d.email}&gt;</span>
-                              <button className="ci-ra-email-v2-chip-remove" onClick={() => eliminarDestinatarioEdicion(d.id)}>×</button>
-                            </span>
-                          ))}
-                          <input type="email" className="ci-ra-email-v2-chip-input" placeholder="Agregar email..."
-                            onKeyPress={(e) => handleKeyPressDest(e, 'PARA')} />
-                        </div>
+                      <div className="ci-ra-email-v2-recipients-container">
+                        {editandoDestinatarios.filter(d => d.tipo === 'PARA').map((d) => (
+                          <span key={d.id} className="ci-ra-email-v2-chip ci-ra-email-v2-chip-para">
+                            <span className="ci-ra-email-v2-chip-name">{d.nombre || d.email}</span>
+                            <span className="ci-ra-email-v2-chip-email">&lt;{d.email}&gt;</span>
+                            <button className="ci-ra-email-v2-chip-remove" onClick={() => eliminarDestinatarioEdicion(d.id)}>×</button>
+                          </span>
+                        ))}
+                        <input type="email" className="ci-ra-email-v2-chip-input" placeholder={editandoDestinatarios.filter(d => d.tipo === 'PARA').length === 0 ? 'Agregar destinatarios...' : ''}
+                          onKeyPress={(e) => handleKeyPressDest(e, 'PARA')} />
                       </div>
                     </div>
-
-                    {/* CC */}
-                    <div className="ci-ra-email-v2-dest-row">
+                    <div className="ci-ra-email-v2-dest-row ci-ra-email-v2-dest-row-cc">
                       <label className="ci-ra-email-v2-dest-label">CC</label>
-                      <div className="ci-ra-email-v2-dest-input-wrapper">
-                        <div className="ci-ra-email-v2-recipients-container">
-                          {editandoDestinatarios.filter(d => d.tipo === 'CC').map((d) => (
-                            <span key={d.id} className="ci-ra-email-v2-chip ci-ra-email-v2-chip-cc">
-                              <span className="ci-ra-email-v2-chip-name">{d.nombre || d.email}</span>
-                              <span className="ci-ra-email-v2-chip-email">&lt;{d.email}&gt;</span>
-                              <button className="ci-ra-email-v2-chip-remove" onClick={() => eliminarDestinatarioEdicion(d.id)}>×</button>
-                            </span>
-                          ))}
-                          <input type="email" className="ci-ra-email-v2-chip-input" placeholder="Agregar CC..."
-                            onKeyPress={(e) => handleKeyPressDest(e, 'CC')} />
-                        </div>
+                      <div className="ci-ra-email-v2-recipients-container">
+                        {editandoDestinatarios.filter(d => d.tipo === 'CC').map((d) => (
+                          <span key={d.id} className="ci-ra-email-v2-chip ci-ra-email-v2-chip-cc">
+                            <span className="ci-ra-email-v2-chip-name">{d.nombre || d.email}</span>
+                            <span className="ci-ra-email-v2-chip-email">&lt;{d.email}&gt;</span>
+                            <button className="ci-ra-email-v2-chip-remove" onClick={() => eliminarDestinatarioEdicion(d.id)}>×</button>
+                          </span>
+                        ))}
+                        <input type="email" className="ci-ra-email-v2-chip-input" placeholder={editandoDestinatarios.filter(d => d.tipo === 'CC').length === 0 ? 'Agregar CC...' : ''}
+                          onKeyPress={(e) => handleKeyPressDest(e, 'CC')} />
                       </div>
+                      {!mostrarCCO && (
+                        <button className="ci-ra-email-v2-cc-toggle" onClick={() => setMostrarCCO(true)} title="Agregar CCO">CCO</button>
+                      )}
                     </div>
-
-                    {/* CCO */}
-                    <div className="ci-ra-email-v2-dest-row">
-                      <label className="ci-ra-email-v2-dest-label">CCO</label>
-                      <div className="ci-ra-email-v2-dest-input-wrapper">
+                    {mostrarCCO && (
+                      <div className="ci-ra-email-v2-dest-row ci-ra-email-v2-dest-row-cc">
+                        <label className="ci-ra-email-v2-dest-label">CCO</label>
                         <div className="ci-ra-email-v2-recipients-container">
                           {editandoDestinatarios.filter(d => d.tipo === 'CCO').map((d) => (
                             <span key={d.id} className="ci-ra-email-v2-chip ci-ra-email-v2-chip-cco">
@@ -1068,11 +1108,11 @@ export default function ReportesAuto() {
                               <button className="ci-ra-email-v2-chip-remove" onClick={() => eliminarDestinatarioEdicion(d.id)}>×</button>
                             </span>
                           ))}
-                          <input type="email" className="ci-ra-email-v2-chip-input" placeholder="Agregar CCO..."
+                          <input type="email" className="ci-ra-email-v2-chip-input" placeholder={editandoDestinatarios.filter(d => d.tipo === 'CCO').length === 0 ? 'Agregar CCO...' : ''}
                             onKeyPress={(e) => handleKeyPressDest(e, 'CCO')} />
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   <div className="ci-ra-email-v2-field">
@@ -1102,12 +1142,25 @@ export default function ReportesAuto() {
                     <label className="ci-ra-email-v2-field-label">📝 Cuerpo del Correo</label>
                     <div className="ci-ra-email-v2-body-section">
                       <div className="ci-ra-email-v2-toolbar">
-                        <button className="ci-ra-email-v2-toolbar-var" onClick={() => setEditandoCuerpo(editandoCuerpo + '{FECHA}')}>{'{FECHA}'}</button>
-                        <button className="ci-ra-email-v2-toolbar-var" onClick={() => setEditandoCuerpo(editandoCuerpo + '{TIPO_REPORTE}')}>{'{TIPO}'}</button>
-                        <button className="ci-ra-email-v2-toolbar-var" onClick={() => setEditandoCuerpo(editandoCuerpo + '{EMPRESA}')}>{'{EMPRESA}'}</button>
+                        <button className="ci-ra-email-v2-toolbar-btn" onClick={() => document.execCommand('bold')}>B</button>
+                        <button className="ci-ra-email-v2-toolbar-btn" onClick={() => document.execCommand('italic')}>I</button>
+                        <button className="ci-ra-email-v2-toolbar-btn" onClick={() => document.execCommand('underline')}>U</button>
+                        <span className="ci-ra-email-v2-toolbar-sep"></span>
+                        <div className="ci-ra-email-v2-toolbar-vars">
+                          <button className="ci-ra-email-v2-toolbar-var" onClick={() => insertarVariable('{FECHA}')}>{'{FECHA}'}</button>
+                          <button className="ci-ra-email-v2-toolbar-var" onClick={() => insertarVariable('{TIPO_REPORTE}')}>{'{TIPO}'}</button>
+                          <button className="ci-ra-email-v2-toolbar-var" onClick={() => insertarVariable('{EMPRESA}')}>{'{EMPRESA}'}</button>
+                        </div>
                       </div>
-                      <textarea className="ci-ra-email-v2-textarea" value={editandoCuerpo}
-                        onChange={(e) => setEditandoCuerpo(e.target.value)} placeholder="Escribe el cuerpo del correo..." rows={8} />
+                      <div
+                        className="ci-ra-email-v2-textarea"
+                        contentEditable={true}
+                        suppressContentEditableWarning={true}
+                        onInput={(e) => setEditandoCuerpo(e.target.innerHTML)}
+                        dangerouslySetInnerHTML={{ __html: editandoCuerpo }}
+                        placeholder="Escribe el cuerpo del correo..."
+                        style={{ minHeight: '200px' }}
+                      />
                     </div>
                   </div>
 

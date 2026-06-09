@@ -2549,6 +2549,10 @@
   background: var(--tm-primary-100);
 }
 
+.ci-ra-email-v2-toolbar-bold { font-weight: 700; }
+.ci-ra-email-v2-toolbar-italic { font-style: italic; }
+.ci-ra-email-v2-toolbar-underline { text-decoration: underline; }
+
 .ci-ra-email-v2-textarea {
   width: 100%;
   min-height: 200px;
@@ -2817,6 +2821,225 @@
 .ci-ra-email-v2-empty-desc {
   font-size: 14px;
   margin-bottom: 24px;
+}
+
+/* Destinatarios compactos */
+.ci-ra-email-v2-dest-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+  overflow: hidden;
+}
+
+.ci-ra-email-v2-dest-row {
+  display: flex;
+  align-items: stretch;
+  min-height: 38px;
+}
+
+.ci-ra-email-v2-dest-row + .ci-ra-email-v2-dest-row {
+  border-top: 1px solid var(--tm-border);
+}
+
+.ci-ra-email-v2-dest-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tm-text-muted);
+  min-width: 48px;
+  padding: 10px 8px 10px 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: var(--tm-bg-alt);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.ci-ra-email-v2-recipients-container {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: var(--tm-bg);
+  min-height: 38px;
+  transition: all 0.15s;
+}
+
+.ci-ra-email-v2-recipients-container:focus-within {
+  background: var(--tm-surface);
+}
+
+/* Chips más compactos */
+.ci-ra-email-v2-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  max-width: 180px;
+}
+
+.ci-ra-email-v2-chip-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ci-ra-email-v2-chip-email {
+  font-size: 11px;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: none;
+}
+
+.ci-ra-email-v2-chip:hover .ci-ra-email-v2-chip-email {
+  display: inline;
+}
+
+.ci-ra-email-v2-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border: none;
+  background: transparent;
+  color: currentColor;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 50%;
+  opacity: 0.5;
+  transition: all 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+
+.ci-ra-email-v2-chip-remove:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.1);
+}
+
+.ci-ra-email-v2-chip-input {
+  flex: 1;
+  min-width: 80px;
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--tm-text);
+  outline: none;
+}
+
+.ci-ra-email-v2-chip-input::placeholder {
+  color: var(--tm-text-muted);
+  font-size: 12px;
+}
+
+/* Botón compacto CCO */
+.ci-ra-email-v2-cc-toggle {
+  padding: 4px 10px;
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tm-text-muted);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.ci-ra-email-v2-cc-toggle:hover {
+  color: var(--tm-primary-500);
+}
+
+/* Toolbar bold button */
+.ci-ra-email-v2-toolbar-bold {
+  font-size: 15px !important;
+  font-weight: 700;
+  min-width: 32px;
+  text-align: center;
+}
+
+.ci-ra-email-v2-toolbar-bold:hover {
+  background: var(--tm-primary-100) !important;
+  border-color: var(--tm-primary-300) !important;
+  color: var(--tm-primary-700) !important;
+}
+
+/* Reducir padding del editor */
+.ci-ra-email-v2-editor-content {
+  padding: 16px;
+  gap: 12px;
+}
+
+.ci-ra-email-v2-field {
+  gap: 4px;
+}
+
+.ci-ra-email-v2-from-box {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+/* Campos más compactos */
+.ci-ra-email-v2-input {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.ci-ra-email-v2-textarea {
+  min-height: 150px;
+  padding: 12px 14px;
+  font-size: 13px;
+}
+
+/* Reportes adjuntos más compactos */
+.ci-ra-email-v2-attachments-header {
+  margin-bottom: 2px;
+}
+
+.ci-ra-email-v2-attachments-grid {
+  gap: 4px;
+}
+
+.ci-ra-email-v2-attachment-item {
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+/* Signature más compacta */
+.ci-ra-email-v2-signature {
+  gap: 6px;
+}
+
+.ci-ra-email-v2-signature-upload {
+  gap: 6px;
+}
+
+/* Sección de reportes */
+.ci-ra-email-v2-field-label {
+  font-size: 10px;
+}
+
+/* Separador de toolbar */
+.ci-ra-email-v2-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--tm-border);
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 
 /* Responsive */

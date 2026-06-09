@@ -17,5 +17,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getVersion: () => process.versions.electron,
 
   // Plataforma (útil para comportamientos específicos)
-  getPlatform: () => process.platform
+  getPlatform: () => process.platform,
+
+  // Credenciales multi-usuario (cifradas con safeStorage, como Chrome Password Manager)
+  guardarCredenciales: (creds) => ipcRenderer.invoke('guardar-credenciales', creds),
+  cargarCredenciales: (usuario) => ipcRenderer.invoke('cargar-credenciales', usuario),
+  listarUsuarios: () => ipcRenderer.invoke('listar-usuarios'),
+  eliminarCredenciales: (usuario) => ipcRenderer.invoke('eliminar-credenciales', usuario)
 });

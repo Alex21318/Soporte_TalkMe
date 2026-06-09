@@ -562,18 +562,45 @@ async function ejecutarReportesScheduled(config) {
                             mensajeHtml += `<div style="margin-top: 30px; ${estilosBase}">${firma}</div>`;
                         }
 
-                        // Agregar imagen de firma si existe
-                        if (plantilla.imagenFirmaPath) {
-                            mensajeHtml += `<div style="margin-top: 10px;">
-                                <img src="${plantilla.imagenFirmaPath}" style="max-width: 600px; max-height: 120px;" alt="Firma" />
-                            </div>`;
-                        }
-
-                        // Preparar attachments
+                        // Preparar attachments base con los reportes
                         const attachments = reportesParaPlantilla.map(r => ({
                             path: r.archivoPath,
                             nombre: r.archivoNombre
                         }));
+
+                        // Agregar imagen de firma si existe
+                        if (plantilla.imagenFirmaPath) {
+                            const esUrl = plantilla.imagenFirmaPath.startsWith('http://') || plantilla.imagenFirmaPath.startsWith('https://');
+                            const esBase64 = plantilla.imagenFirmaPath.startsWith('data:image/');
+
+                            if (esUrl) {
+                                mensajeHtml += `<div style="margin-top: 10px;">
+                                    <img src="${plantilla.imagenFirmaPath}" style="max-width: 600px; max-height: 120px;" alt="Firma" />
+                                </div>`;
+                            } else if (esBase64) {
+                                const matches = plantilla.imagenFirmaPath.match(/^data:([^;]+);base64,(.+)$/);
+                                if (matches) {
+                                    attachments.push({
+                                        filename: 'firma.png',
+                                        content: Buffer.from(matches[2], 'base64'),
+                                        contentType: matches[1],
+                                        cid: 'firma-template'
+                                    });
+                                    mensajeHtml += `<div style="margin-top: 10px;">
+                                        <img src="cid:firma-template" style="max-width: 600px; max-height: 120px;" alt="Firma" />
+                                    </div>`;
+                                }
+                            } else if (fs.existsSync(plantilla.imagenFirmaPath)) {
+                                attachments.push({
+                                    filename: 'firma.png',
+                                    path: plantilla.imagenFirmaPath,
+                                    cid: 'firma-template'
+                                });
+                                mensajeHtml += `<div style="margin-top: 10px;">
+                                    <img src="cid:firma-template" style="max-width: 600px; max-height: 120px;" alt="Firma" />
+                                </div>`;
+                            }
+                        }
 
                         // Enviar correo
                         const resultadoEmail = await emailService.enviarReportePorEmail({
