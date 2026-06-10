@@ -2068,15 +2068,16 @@ router.post('/api/cierres/ejecutar', async (req, res) => {
             INSERT INTO RESOLUCIONES (ID_CONVERSACION, TIPO_RESOLUCION, RESOLUCION, CREADO_POR, CREADO_EL)
             SELECT
                 C.ID_CONVERSACION,
-                TR.ID_TIPO_RESOLUCION,
+                (SELECT TR.ID_TIPO_RESOLUCION
+                 FROM TIPOS_RESOLUCIONES TR
+                 WHERE TR.ID_EMPRESA = CV.ID_EMPRESA
+                   AND TR.RESOLUCION = 'Conversación en atención'
+                 LIMIT 1),
                 'Cierre automático del sistema con más de 30 días en atención.',
                 'BOT',
                 ?
             FROM CONVERSACIONES C
             JOIN CONVERSACIONES_VW CV ON CV.ID_CONVERSACION = C.ID_CONVERSACION
-            JOIN TIPOS_RESOLUCIONES TR
-                ON TR.ID_EMPRESA = CV.ID_EMPRESA
-               AND TR.RESOLUCION = 'Conversación en atención'
             LEFT JOIN RESOLUCIONES R
                 ON R.ID_CONVERSACION = C.ID_CONVERSACION
             WHERE C.ESTADO = 3
