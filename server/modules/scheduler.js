@@ -32,7 +32,8 @@ async function leerConfig() {
                SKILLS AS skills, ID_BOTS AS id_bots,
                ID_BROADCASTS AS id_broadcasts,
                ID_FORMULARIO AS id_formulario,
-               TEXTO_BUSCAR AS texto_buscar, FLUJO AS flujo
+               TEXTO_BUSCAR AS texto_buscar, FLUJO AS flujo,
+               FRECUENCIA, DIA_SEMANA, DIA_MES
         FROM SCHEDULER_REPORTES_DETALLE WHERE ID_JOB = ?
     `, [job.ID_JOB]);
 
@@ -43,6 +44,9 @@ async function leerConfig() {
         reportes: detalles.map(d => ({
             ...d,
             activo: !!d.activo,
+            frecuencia: d.FRECUENCIA || 'diario',
+            dia_semana: d.DIA_SEMANA,
+            dia_mes: d.DIA_MES,
             skills:        tryParseJSON(d.skills, []),
             id_bots:       tryParseJSON(d.id_bots, []),
             id_broadcasts: tryParseJSON(d.id_broadcasts, []),
@@ -61,7 +65,8 @@ async function guardarConfig(config) {
             UPDATE SCHEDULER_REPORTES_DETALLE
             SET CARPETA = ?, ACTIVO = ?, FORMATO = ?,
                 SKILLS = ?, ID_BOTS = ?, ID_BROADCASTS = ?,
-                ID_FORMULARIO = ?, TEXTO_BUSCAR = ?, FLUJO = ?
+                ID_FORMULARIO = ?, TEXTO_BUSCAR = ?, FLUJO = ?,
+                FRECUENCIA = ?, DIA_SEMANA = ?, DIA_MES = ?
             WHERE ID_JOB = ? AND CLAVE = ?
         `, [
             r.carpeta, r.activo ? 1 : 0, r.formato || 'xlsx',
@@ -69,6 +74,7 @@ async function guardarConfig(config) {
             r.id_bots?.length       ? JSON.stringify(r.id_bots)       : null,
             r.id_broadcasts?.length ? JSON.stringify(r.id_broadcasts) : null,
             r.id_formulario || null, r.texto_buscar || null, r.flujo || null,
+            r.frecuencia || 'diario', r.dia_semana || null, r.dia_mes || null,
             id_job, r.clave
         ]);
     }
@@ -108,6 +114,30 @@ async function guardarLog(id_job, fechaEjecucion, entrada) {
 // ==========================================================================
 let cronJob = null;
 
+// ── Frecuencia: verifica si un reporte debe ejecutarse hoy (hora Guatemala) ──
+function debeEjecutarReporte(rep) {
+    const ahora = new Date();
+    // Convertir a hora Guatemala (UTC-6)
+    const gt = new Date(ahora.getTime() - 6 * 60 * 60 * 1000);
+    const diaSemanaJS = gt.getDay();     // 0=Dom, 1=Lun ... 6=Sáb
+    const diaMes = gt.getDate();         // 1-31
+
+    // Mapear JS day (0=Dom) a DB day (1=Lun, 7=Dom)
+    const diaSemanaDB = diaSemanaJS === 0 ? 7 : diaSemanaJS;
+
+    const freq = rep.frecuencia || 'diario';
+
+    switch (freq) {
+        case 'semanal':
+            return rep.dia_semana != null && diaSemanaDB === Number(rep.dia_semana);
+        case 'mensual':
+            return rep.dia_mes != null && diaMes === Number(rep.dia_mes);
+        case 'diario':
+        default:
+            return true;
+    }
+}
+
 async function programarCron() {
     if (cronJob) { cronJob.stop(); cronJob = null; }
     try {
@@ -118,7 +148,7 @@ async function programarCron() {
         }
         const [hh, mm] = config.hora.split(':').map(Number);
         const hhUTC = (hh + 6) % 24;
-        const expresion = `${mm} ${hhUTC} * * *`;
+        const expresion = `${mm} ${hhUTC} * * *`; // Siempre diario
 
         cronJob = cron.schedule(expresion, async () => {
             console.log(`[Scheduler] ⏰ Ejecutando reportes (${config.hora} GT)...`);
@@ -192,26 +222,29 @@ router.post('/api/scheduler/reporte/agregar', async (req, res) => {
         const { clave, nombre, tipo_reporte, db_key, id_empresa, carpeta, formato } = req.body;
         const config = await leerConfig();
         if (!config.id_job) return res.status(400).json({ error: 'No existe un job configurado' });
-        const { skills, id_bots, id_broadcasts, id_formulario, texto_buscar, flujo } = req.body;
+        const { skills, id_bots, id_broadcasts, id_formulario, texto_buscar, flujo, frecuencia, dia_semana, dia_mes } = req.body;
         await db.query(`
             INSERT INTO SCHEDULER_REPORTES_DETALLE
                 (ID_JOB, CLAVE, NOMBRE, TIPO_REPORTE, DB_KEY, ID_EMPRESA, CARPETA, ACTIVO,
-                 FORMATO, SKILLS, ID_BOTS, ID_BROADCASTS, ID_FORMULARIO, TEXTO_BUSCAR, FLUJO)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
+                 FORMATO, SKILLS, ID_BOTS, ID_BROADCASTS, ID_FORMULARIO, TEXTO_BUSCAR, FLUJO,
+                 FRECUENCIA, DIA_SEMANA, DIA_MES)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 NOMBRE=VALUES(NOMBRE), TIPO_REPORTE=VALUES(TIPO_REPORTE),
                 DB_KEY=VALUES(DB_KEY), ID_EMPRESA=VALUES(ID_EMPRESA),
                 CARPETA=VALUES(CARPETA), FORMATO=VALUES(FORMATO),
                 SKILLS=VALUES(SKILLS), ID_BOTS=VALUES(ID_BOTS),
                 ID_BROADCASTS=VALUES(ID_BROADCASTS), ID_FORMULARIO=VALUES(ID_FORMULARIO),
-                TEXTO_BUSCAR=VALUES(TEXTO_BUSCAR), FLUJO=VALUES(FLUJO), ACTIVO=1
+                TEXTO_BUSCAR=VALUES(TEXTO_BUSCAR), FLUJO=VALUES(FLUJO), ACTIVO=1,
+                FRECUENCIA=VALUES(FRECUENCIA), DIA_SEMANA=VALUES(DIA_SEMANA), DIA_MES=VALUES(DIA_MES)
         `, [
             config.id_job, clave, nombre, tipo_reporte, db_key, id_empresa, carpeta,
             formato || 'xlsx',
             skills?.length        ? JSON.stringify(skills)        : null,
             id_bots?.length       ? JSON.stringify(id_bots)       : null,
             id_broadcasts?.length ? JSON.stringify(id_broadcasts) : null,
-            id_formulario || null, texto_buscar || null, flujo || null
+            id_formulario || null, texto_buscar || null, flujo || null,
+            frecuencia || 'diario', dia_semana || null, dia_mes || null
         ]);
         res.json({ ok: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -378,6 +411,12 @@ async function ejecutarReportesScheduled(config) {
 
     for (const rep of config.reportes) {
         if (!rep.activo) continue;
+        
+        // Frecuencia: solo ejecutar si hoy corresponde
+        if (!debeEjecutarReporte(rep)) {
+            console.log(`[Scheduler] ⏭ ${rep.nombre} saltado (frecuencia: ${rep.frecuencia || 'diario'}${rep.frecuencia === 'semanal' ? ' día=' + rep.dia_semana : ''}${rep.frecuencia === 'mensual' ? ' día mes=' + rep.dia_mes : ''})`);
+            continue;
+        }
 
         // ── URL del endpoint según tipo ──
         const TIPO_ENDPOINT = {

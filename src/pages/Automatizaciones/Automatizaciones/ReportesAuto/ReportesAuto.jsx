@@ -151,6 +151,9 @@ function ModalAgregarReporte({ onClose, onAgregado, reporteInicial }) {
   const [formularioSel, setFormularioSel] = useState(reporteInicial?.id_formulario || '');
   const [textoBuscar, setTextoBuscar] = useState(reporteInicial?.texto_buscar || '');
   const [flujo, setFlujo] = useState(reporteInicial?.flujo || '');
+  const [frecuencia, setFrecuencia] = useState(reporteInicial?.frecuencia || 'diario');
+  const [diaSemana, setDiaSemana] = useState(reporteInicial?.dia_semana || '');
+  const [diaMes, setDiaMes] = useState(reporteInicial?.dia_mes || '');
 
   const idEmpresaInicial = useRef(esEdicion ? String(reporteInicial?.id_empresa || '') : '');
   const dbKeyPrev = useRef(dbKey);
@@ -259,7 +262,10 @@ function ModalAgregarReporte({ onClose, onAgregado, reporteInicial }) {
         id_empresa: String(idEmpresa), carpeta: carpeta.trim(), formato,
         skills: skillsSel, id_bots: botsSel,
         id_broadcasts: [], id_formulario: formularioSel,
-        texto_buscar: textoBuscar.trim(), flujo: flujo.trim()
+        texto_buscar: textoBuscar.trim(), flujo: flujo.trim(),
+        frecuencia: frecuencia || 'diario',
+        dia_semana: diaSemana ? parseInt(diaSemana) : null,
+        dia_mes: diaMes ? parseInt(diaMes) : null,
       });
 
       toast.success(esEdicion ? 'Reporte actualizado' : 'Reporte agregado');
@@ -393,6 +399,42 @@ function ModalAgregarReporte({ onClose, onAgregado, reporteInicial }) {
             </div>
           )}
 
+          {/* Frecuencia */}
+          <div className="ci-ra-modal-row2">
+            <div className="ci-ra-modal-field">
+              <label>🔄 Frecuencia</label>
+              <select className="ci-ra-select" value={frecuencia} onChange={e => setFrecuencia(e.target.value)}>
+                <option value="diario">📅 Diario</option>
+                <option value="semanal">📆 Semanal</option>
+                <option value="mensual">📅 Mensual</option>
+              </select>
+            </div>
+            {frecuencia === 'semanal' && (
+              <div className="ci-ra-modal-field">
+                <label>Día de la semana</label>
+                <select className="ci-ra-select" value={diaSemana} onChange={e => setDiaSemana(e.target.value)}>
+                  <option value="">— seleccionar —</option>
+                  <option value="1">Lunes</option>
+                  <option value="2">Martes</option>
+                  <option value="3">Miércoles</option>
+                  <option value="4">Jueves</option>
+                  <option value="5">Viernes</option>
+                  <option value="6">Sábado</option>
+                  <option value="7">Domingo</option>
+                </select>
+              </div>
+            )}
+            {frecuencia === 'mensual' && (
+              <div className="ci-ra-modal-field">
+                <label>Día del mes</label>
+                <select className="ci-ra-select" value={diaMes} onChange={e => setDiaMes(e.target.value)}>
+                  <option value="">— seleccionar —</option>
+                  {[...Array(31)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
+                </select>
+              </div>
+            )}
+          </div>
+
           {/* Carpeta destino */}
           <div className="ci-ra-modal-field">
             <label>📁 Carpeta destino</label>
@@ -472,9 +514,11 @@ export default function ReportesAuto() {
     if (!silencioso) setLoading(true);
     try {
       const data = await schedulerService.obtenerConfig();
-      setConfig(data);
+      // Asegurar que config tenga reportes array aunque falle el backend
+      setConfig(data && data.reportes ? data : { ...data, reportes: [] });
     } catch {
       toast.error('Error al cargar configuración');
+      setConfig({ reportes: [], activo: false, hora: '07:00' }); // fallback seguro
     } finally {
       if (!silencioso) setLoading(false);
     }
@@ -874,7 +918,7 @@ export default function ReportesAuto() {
           <span className="ci-ra-header-icon">⏰</span>
           <div>
             <h2 className="ci-ra-header-titulo">Reportes Automáticos</h2>
-            <p className="ci-ra-header-sub">Generación diaria automática — datos del día anterior</p>
+            <p className="ci-ra-header-sub">Cada reporte tiene su propia frecuencia — datos del día anterior</p>
           </div>
         </div>
         <div className="ci-ra-header-right">
@@ -962,6 +1006,12 @@ export default function ReportesAuto() {
                     <span className="ci-ra-rep-meta-item">🏢 Empresa {rep.id_empresa}</span>
                     <span className="ci-ra-rep-meta-sep">·</span>
                     <span className="ci-ra-rep-meta-item">📊 {tipoInfo?.label || rep.tipo_reporte}</span>
+                    <span className="ci-ra-rep-meta-sep">·</span>
+                    <span className={`ci-ra-rep-meta-item ci-ra-freq-badge ci-ra-freq-${rep.frecuencia || 'diario'}`}>
+                      {(rep.frecuencia || 'diario') === 'diario' && '📅 Diario'}
+                      {(rep.frecuencia || 'diario') === 'semanal' && `📆 Semanal (${['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][rep.dia_semana]})`}
+                      {(rep.frecuencia || 'diario') === 'mensual' && `📅 Mensual (día ${rep.dia_mes})`}
+                    </span>
                   </div>
                   <div className="ci-ra-rep-carpeta">
                     <span className="ci-ra-rep-carpeta-icon">📁</span>
