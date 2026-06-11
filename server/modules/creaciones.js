@@ -1892,6 +1892,7 @@ router.get('/api/creaciones/bots', async (req, res) => {
 router.get('/api/creaciones/bot-redes', async (req, res) => {
   const dbKey = req.query.db_key || 'db_1';
   const idBot = req.query.id_bot;
+  const idRedSocial = req.query.id_red_social;
   
   if (!idBot) {
     return res.status(400).json({ error: 'Debe especificar id_bot' });
@@ -1913,13 +1914,22 @@ router.get('/api/creaciones/bot-redes', async (req, res) => {
   try {
     const connection = await poolBotRedes.getConnection();
     try {
-      const [rows] = await connection.query(`
+      let query = `
         SELECT br.ID_BOT_REDES, br.ID_BOT, br.ID_RED_SOCIAL, br.ID_PAIS, br.ESTADO, rs.NOMBRE AS NOMBRE_RED
         FROM BOT_REDES br
         JOIN REDES_SOCIALES rs ON br.ID_RED_SOCIAL = rs.ID_RED_SOCIAL
         WHERE br.ID_BOT = ? AND br.ESTADO = 1 AND rs.ESTADO = 1
-        ORDER BY rs.NOMBRE
-      `, [idBot]);
+      `;
+      const params = [idBot];
+      
+      if (idRedSocial) {
+        query += ' AND br.ID_RED_SOCIAL = ?';
+        params.push(idRedSocial);
+      }
+      
+      query += ' ORDER BY rs.NOMBRE';
+      
+      const [rows] = await connection.query(query, params);
       res.json(rows);
     } finally {
       connection.release();
@@ -2408,6 +2418,8 @@ router.post('/api/numeros-demos/validar', async (req, res) => {
                    ID_BOT_REDES = ?, 
                    NOMBRE_EMPRESA = ?, 
                    SEGMENTO = ?,
+                   AUTH_CODE = ?,
+                   APP_ID = ?,
                    ESTADO = 'OCUPADO',
                    USADO_EL = NOW(),
                    ACTUALIZADO_POR = 'alex.carrera',
@@ -2419,6 +2431,8 @@ router.post('/api/numeros-demos/validar', async (req, res) => {
                 numDB.ID_BOT_REDES, 
                 numDB.NOMBRE_EMPRESA, 
                 segmento,
+                numDB.AUTH_CODE || null,
+                numDB.APP_ID || null,
                 match.ID_NUMERO
               ]
             );
@@ -2464,6 +2478,409 @@ router.post('/api/numeros-demos/validar', async (req, res) => {
   } catch (error) {
     console.error('[NumerosDemos] Error al validar:', error.message);
     res.status(500).json({ error: 'Error al validar números', details: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENDPOINTS PARA PÁGINAS DEMOS (Facebook e Instagram)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/paginas-demos
+ * Obtiene todas las páginas demos
+ */
+router.get('/api/paginas-demos', async (req, res) => {
+  try {
+    const connection = await dbPools.control.getConnection();
+    
+    try {
+      const [rows] = await connection.query(`
+        SELECT 
+          ID_PAGINA,
+          NOMBRE_PAGINA,
+          ID_PAGINA_FB,
+          TOKEN,
+          ID_PAGINA_IG,
+          NOMBRE_USUARIO_IG,
+          RED_SOCIAL,
+          ESTADO,
+          ID_EMPRESA,
+          ID_BOT,
+          ID_BOT_REDES,
+          NOMBRE_EMPRESA,
+          SEGMENTO,
+          TIPO_DEMO,
+          CREADO_POR,
+          CREADO_EL,
+          ACTUALIZADO_POR,
+          ACTUALIZADO_EL,
+          USADO_EL
+        FROM PAGINAS_DEMOS
+        ORDER BY CREADO_EL DESC
+      `);
+      res.json(rows);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('[PaginasDemos] Error al obtener páginas:', error.message);
+    res.status(500).json({ error: 'Error al obtener páginas', details: error.message });
+  }
+});
+
+/**
+ * POST /api/paginas-demos
+ * Crea una nueva página demo
+ */
+router.post('/api/paginas-demos', async (req, res) => {
+  const { nombrePagina, idPaginaFb, token, idPaginaIg, nombreUsuarioIg, redSocial, estado, tipoDemo } = req.body;
+  
+  try {
+    const connection = await dbPools.control.getConnection();
+    
+    try {
+      const [result] = await connection.query(`
+        INSERT INTO PAGINAS_DEMOS (
+          NOMBRE_PAGINA, ID_PAGINA_FB, TOKEN, ID_PAGINA_IG, NOMBRE_USUARIO_IG,
+          RED_SOCIAL, ESTADO, TIPO_DEMO, CREADO_POR, CREADO_EL
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'alex.carrera', NOW())
+      `, [nombrePagina || null, idPaginaFb || null, token || null, idPaginaIg || null, nombreUsuarioIg || null, redSocial || 'FACEBOOK', estado || 'DISPONIBLE', tipoDemo || null]);
+      
+      res.json({ id: result.insertId, message: 'Página creada exitosamente' });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('[PaginasDemos] Error al crear página:', error.message);
+    res.status(500).json({ error: 'Error al crear página', details: error.message });
+  }
+});
+
+/**
+ * PUT /api/paginas-demos/:id
+ * Actualiza una página demo
+ */
+router.put('/api/paginas-demos/:id', async (req, res) => {
+  const { id } = req.params;
+  const { nombrePagina, idPaginaFb, token, idPaginaIg, nombreUsuarioIg, redSocial, estado, tipoDemo } = req.body;
+  
+  try {
+    const connection = await dbPools.control.getConnection();
+    
+    try {
+      await connection.query(`
+        UPDATE PAGINAS_DEMOS
+        SET NOMBRE_PAGINA = ?,
+            ID_PAGINA_FB = ?,
+            TOKEN = ?,
+            ID_PAGINA_IG = ?,
+            NOMBRE_USUARIO_IG = ?,
+            RED_SOCIAL = ?,
+            ESTADO = ?,
+            TIPO_DEMO = ?,
+            ACTUALIZADO_POR = 'alex.carrera',
+            ACTUALIZADO_EL = NOW()
+        WHERE ID_PAGINA = ?
+      `, [nombrePagina || null, idPaginaFb || null, token || null, idPaginaIg || null, nombreUsuarioIg || null, redSocial || 'FACEBOOK', estado || 'DISPONIBLE', tipoDemo || null, id]);
+      
+      res.json({ message: 'Página actualizada exitosamente' });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('[PaginasDemos] Error al actualizar página:', error.message);
+    res.status(500).json({ error: 'Error al actualizar página', details: error.message });
+  }
+});
+
+/**
+ * DELETE /api/paginas-demos/:id
+ * Elimina una página demo
+ */
+router.delete('/api/paginas-demos/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const connection = await dbPools.control.getConnection();
+    
+    try {
+      await connection.query('DELETE FROM PAGINAS_DEMOS WHERE ID_PAGINA = ?', [id]);
+      res.json({ message: 'Página eliminada exitosamente' });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('[PaginasDemos] Error al eliminar página:', error.message);
+    res.status(500).json({ error: 'Error al eliminar página', details: error.message });
+  }
+});
+
+/**
+ * POST /api/paginas-demos/:id/liberar
+ * Libera una página demo (marca como DISPONIBLE y limpia campos de uso)
+ */
+router.post('/api/paginas-demos/:id/liberar', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const connection = await dbPools.control.getConnection();
+    
+    try {
+      await connection.query(`
+        UPDATE PAGINAS_DEMOS
+        SET ESTADO = 'DISPONIBLE',
+            ID_EMPRESA = NULL,
+            ID_BOT = NULL,
+            ID_BOT_REDES = NULL,
+            NOMBRE_EMPRESA = NULL,
+            SEGMENTO = NULL,
+            USADO_EL = NULL,
+            ACTUALIZADO_POR = 'alex.carrera',
+            ACTUALIZADO_EL = NOW()
+        WHERE ID_PAGINA = ?
+      `, [id]);
+      
+      res.json({ message: 'Página liberada exitosamente' });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('[PaginasDemos] Error al liberar página:', error.message);
+    res.status(500).json({ error: 'Error al liberar página', details: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENDPOINT: Validar páginas demos en bases de datos de segmentos
+// ═══════════════════════════════════════════════════════════════════════════════
+router.post('/api/paginas-demos/validar', async (req, res) => {
+  const { dbKey } = req.body;
+  
+  const VALID_DBS = ['db_1', 'db_2', 'db_3', 'db_4', 'db_5', 'db_6', 'db_7', 'db_8'];
+  const SEGMENTO_MAP = {
+    'db_1': 'S1',
+    'db_2': 'S2',
+    'db_3': 'S3',
+    'db_4': 'S4',
+    'db_5': 'MDD',
+    'db_6': 'FS1',
+    'db_7': 'FS2',
+    'db_8': 'FS3'
+  };
+  
+  if (!VALID_DBS.includes(dbKey)) {
+    return res.status(400).json({ error: 'Base de datos no válida' });
+  }
+
+  const segmento = SEGMENTO_MAP[dbKey];
+
+  try {
+    const pool = getPool(dbKey);
+    if (!pool) {
+      return res.status(400).json({ error: `Pool de base de datos ${dbKey} no encontrado` });
+    }
+
+    const connection = await pool.getConnection();
+    
+    try {
+      // Query para obtener páginas activas de Facebook e Instagram, agrupadas por bot
+      const [paginasDB] = await connection.query(`
+        SELECT 
+            A.ID_EMPRESA,
+            A.NOMBRE AS NOMBRE_EMPRESA,
+            NULL AS USUARIO_ID,
+            B.ID_BOT,
+            B.DESCRIPCION AS NOMBRE_BOT,
+            GROUP_CONCAT(DISTINCT C.ID_BOT_REDES) AS IDS_BOT_REDES,
+            GROUP_CONCAT(DISTINCT C.ID_RED_SOCIAL) AS IDS_RED_SOCIAL,
+            MAX(D6.VALOR) AS TOKEN,
+            MAX(CASE WHEN C.ID_RED_SOCIAL = 2 THEN D3.VALOR END) AS ID_PAGINA_FB,
+            MAX(CASE WHEN C.ID_RED_SOCIAL = 10 THEN D11.VALOR END) AS ID_PAGINA_IG,
+            MAX(CASE WHEN C.ID_RED_SOCIAL = 10 THEN D7.VALOR END) AS NOMBRE_USUARIO_IG
+        FROM EMPRESAS A
+        JOIN BOT B 
+            ON B.ID_EMPRESA = A.ID_EMPRESA
+        JOIN BOT_REDES C 
+            ON B.ID_BOT = C.ID_BOT
+        JOIN REDES_SOCIALES RS ON C.ID_RED_SOCIAL = RS.ID_RED_SOCIAL
+        LEFT JOIN BOT_RED_CONF_VALORES D6 
+            ON C.ID_BOT_REDES = D6.ID_BOT_REDES 
+            AND D6.ID_BOT_RED_CONFIGURACION = 6
+        LEFT JOIN BOT_RED_CONF_VALORES D3 
+            ON C.ID_BOT_REDES = D3.ID_BOT_REDES 
+            AND D3.ID_BOT_RED_CONFIGURACION = 3
+        LEFT JOIN BOT_RED_CONF_VALORES D11 
+            ON C.ID_BOT_REDES = D11.ID_BOT_REDES 
+            AND D11.ID_BOT_RED_CONFIGURACION = 11
+        LEFT JOIN BOT_RED_CONF_VALORES D7
+            ON C.ID_BOT_REDES = D7.ID_BOT_REDES
+            AND D7.ID_BOT_RED_CONFIGURACION = 7
+        WHERE C.ID_RED_SOCIAL IN (2, 10)
+        AND A.ESTADO = 1
+        AND B.ESTADO = 1
+        AND C.ESTADO = 1
+        AND (D6.VALOR IS NOT NULL OR D3.VALOR IS NOT NULL OR D11.VALOR IS NOT NULL)
+        GROUP BY A.ID_EMPRESA, A.NOMBRE, B.ID_BOT, B.DESCRIPCION
+      `);
+
+      // Ahora buscar coincidencias en PAGINAS_DEMOS (desde la DB de control)
+      const controlConnection = await dbPools.control.getConnection();
+      
+      try {
+        // Obtener todas las páginas de demos existentes para comparar
+        const [paginasDemos] = await controlConnection.query(
+          'SELECT ID_PAGINA, ID_PAGINA_FB, ID_PAGINA_IG FROM PAGINAS_DEMOS WHERE ESTADO != "INACTIVO"'
+        );
+
+        const coincidencias = [];
+        const actualizados = [];
+        const nuevos = [];
+
+        for (const pagDB of paginasDB) {
+          // Determinar si tiene Facebook, Instagram o ambos
+          const idsRedSocial = pagDB.IDS_RED_SOCIAL ? pagDB.IDS_RED_SOCIAL.split(',') : [];
+          const tieneFacebook = idsRedSocial.includes('2');
+          const tieneInstagram = idsRedSocial.includes('10');
+          const redSocial = tieneFacebook && tieneInstagram ? 'AMBAS' : tieneFacebook ? 'FACEBOOK' : 'INSTAGRAM';
+          
+          // Determinar tipo de demo basado en NOMBRE_USUARIO_IG
+          let tipoDemo = 'CLIENTE';
+          if (pagDB.NOMBRE_USUARIO_IG) {
+            const usuarioIgLower = pagDB.NOMBRE_USUARIO_IG.toLowerCase();
+            if (usuarioIgLower.includes('demo')) {
+              tipoDemo = 'DEMO_TALKME';
+            }
+          }
+          
+          // Buscar si ya existe por ID de bot
+          let match = paginasDemos.find(pd => pd.ID_PAGINA_FB === pagDB.ID_PAGINA_FB || pd.ID_PAGINA_IG === pagDB.ID_PAGINA_IG);
+
+          if (match) {
+            // Actualizar registro existente
+            coincidencias.push({
+              idPagina: match.ID_PAGINA,
+              nombrePagina: null,
+              redSocial: redSocial,
+              accion: 'actualizado',
+              tipoDemo: tipoDemo,
+              encontradoEn: {
+                idEmpresa: pagDB.ID_EMPRESA,
+                nombreEmpresa: pagDB.NOMBRE_EMPRESA,
+                idBot: pagDB.ID_BOT,
+                nombreBot: pagDB.NOMBRE_BOT,
+                idsBotRedes: pagDB.IDS_BOT_REDES,
+                token: pagDB.TOKEN,
+                idPaginaFb: pagDB.ID_PAGINA_FB,
+                idPaginaIg: pagDB.ID_PAGINA_IG,
+                nombreUsuarioIg: pagDB.NOMBRE_USUARIO_IG,
+                segmento: segmento
+              }
+            });
+
+            await controlConnection.query(
+              `UPDATE PAGINAS_DEMOS 
+               SET ID_EMPRESA = ?, 
+                   ID_BOT = ?, 
+                   ID_BOT_REDES = ?, 
+                   NOMBRE_EMPRESA = ?, 
+                   SEGMENTO = ?,
+                   TIPO_DEMO = ?,
+                   TOKEN = ?,
+                   ID_PAGINA_FB = ?,
+                   ID_PAGINA_IG = ?,
+                   NOMBRE_USUARIO_IG = ?,
+                   RED_SOCIAL = ?,
+                   ESTADO = 'OCUPADO',
+                   USADO_EL = NOW(),
+                   ACTUALIZADO_POR = 'alex.carrera',
+                   ACTUALIZADO_EL = NOW()
+               WHERE ID_PAGINA = ?`,
+              [
+                pagDB.ID_EMPRESA, 
+                pagDB.ID_BOT, 
+                pagDB.IDS_BOT_REDES, 
+                pagDB.NOMBRE_EMPRESA, 
+                segmento,
+                tipoDemo,
+                pagDB.TOKEN || null,
+                pagDB.ID_PAGINA_FB || null,
+                pagDB.ID_PAGINA_IG || null,
+                pagDB.NOMBRE_USUARIO_IG || null,
+                redSocial,
+                match.ID_PAGINA
+              ]
+            );
+
+            actualizados.push(match.ID_PAGINA);
+          } else {
+            // Crear nuevo registro con nombre vacío
+            const [result] = await controlConnection.query(
+              `INSERT INTO PAGINAS_DEMOS (
+                NOMBRE_PAGINA, ID_PAGINA_FB, TOKEN, ID_PAGINA_IG, NOMBRE_USUARIO_IG,
+                RED_SOCIAL, ESTADO, ID_EMPRESA, ID_BOT, ID_BOT_REDES, NOMBRE_EMPRESA, SEGMENTO, TIPO_DEMO,
+                CREADO_POR, CREADO_EL, USADO_EL
+              ) VALUES (?, ?, ?, ?, ?, ?, 'OCUPADO', ?, ?, ?, ?, ?, ?, 'alex.carrera', NOW(), NOW())`,
+              [
+                null, // NOMBRE_PAGINA vacío
+                pagDB.ID_PAGINA_FB || null,
+                pagDB.TOKEN || null,
+                pagDB.ID_PAGINA_IG || null,
+                pagDB.NOMBRE_USUARIO_IG || null,
+                redSocial,
+                pagDB.ID_EMPRESA,
+                pagDB.ID_BOT,
+                pagDB.IDS_BOT_REDES,
+                pagDB.NOMBRE_EMPRESA,
+                segmento,
+                tipoDemo
+              ]
+            );
+
+            coincidencias.push({
+              idPagina: result.insertId,
+              nombrePagina: null,
+              redSocial: redSocial,
+              accion: 'nuevo',
+              tipoDemo: tipoDemo,
+              encontradoEn: {
+                idEmpresa: pagDB.ID_EMPRESA,
+                nombreEmpresa: pagDB.NOMBRE_EMPRESA,
+                idBot: pagDB.ID_BOT,
+                nombreBot: pagDB.NOMBRE_BOT,
+                idsBotRedes: pagDB.IDS_BOT_REDES,
+                token: pagDB.TOKEN,
+                idPaginaFb: pagDB.ID_PAGINA_FB,
+                idPaginaIg: pagDB.ID_PAGINA_IG,
+                nombreUsuarioIg: pagDB.NOMBRE_USUARIO_IG,
+                segmento: segmento
+              }
+            });
+
+            nuevos.push(result.insertId);
+          }
+        }
+
+        res.json({
+          success: true,
+          segmento,
+          dbKey,
+          totalConsultados: paginasDB.length,
+          coincidenciasEncontradas: coincidencias.length,
+          paginasActualizadas: actualizados.length,
+          paginasNuevas: nuevos.length,
+          detalles: coincidencias
+        });
+
+      } finally {
+        controlConnection.release();
+      }
+
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('[PaginasDemos] Error al validar:', error.message);
+    res.status(500).json({ error: 'Error al validar páginas', details: error.message });
   }
 });
 

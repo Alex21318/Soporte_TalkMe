@@ -1890,8 +1890,12 @@ router.get('/api/creaciones/bots', async (req, res) => {
  * Obtiene la lista de bot_redes (WhatsApp) según el ID_BOT desde la base de datos seleccionada
  */
 router.get('/api/creaciones/bot-redes', async (req, res) => {
+  console.log('[Creaciones] Endpoint bot-redes llamado. Query:', req.query);
   const dbKey = req.query.db_key || 'db_1';
   const idBot = req.query.id_bot;
+  const idRedSocial = req.query.id_red_social;
+  
+  console.log('[Creaciones] bot-redes - idRedSocial:', idRedSocial);
   
   if (!idBot) {
     return res.status(400).json({ error: 'Debe especificar id_bot' });
@@ -1913,13 +1917,22 @@ router.get('/api/creaciones/bot-redes', async (req, res) => {
   try {
     const connection = await poolBotRedes.getConnection();
     try {
-      const [rows] = await connection.query(`
+      let query = `
         SELECT br.ID_BOT_REDES, br.ID_BOT, br.ID_RED_SOCIAL, br.ID_PAIS, br.ESTADO, rs.NOMBRE AS NOMBRE_RED
         FROM BOT_REDES br
         JOIN REDES_SOCIALES rs ON br.ID_RED_SOCIAL = rs.ID_RED_SOCIAL
         WHERE br.ID_BOT = ? AND br.ESTADO = 1 AND rs.ESTADO = 1
-        ORDER BY rs.NOMBRE
-      `, [idBot]);
+      `;
+      const params = [idBot];
+      
+      if (idRedSocial) {
+        query += ' AND br.ID_RED_SOCIAL = ?';
+        params.push(idRedSocial);
+      }
+      
+      query += ' ORDER BY rs.NOMBRE';
+      
+      const [rows] = await connection.query(query, params);
       res.json(rows);
     } finally {
       connection.release();

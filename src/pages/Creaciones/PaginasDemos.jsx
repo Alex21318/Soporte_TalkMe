@@ -4,7 +4,7 @@ import { fetchWithAuth } from '../../utils/fetchWithAuth';
 import { API_URLS } from '../../config/api';
 import ConfirmModal from '../../components/ConfirmModal';
 
-const AMBIENTES = ['DEMO_TALKME', 'DEMO_PARNET', 'DEMO_IA_TALK'];
+const REDES_SOCIALES = ['FACEBOOK', 'INSTAGRAM', 'AMBAS'];
 const ESTADOS = ['DISPONIBLE', 'OCUPADO', 'INACTIVO'];
 
 const DB_VALIDACION = [
@@ -20,30 +20,34 @@ const DB_VALIDACION = [
 
 const DEFAULT_FORM = {
   id: null,
-  nombreApp: '',
-  numero: '',
-  authCode: '',
-  appId: '',
-  ambiente: 'DEMO_TALKME',
+  nombrePagina: '',
+  idPaginaFb: '',
+  token: '',
+  idPaginaIg: '',
+  nombreUsuarioIg: '',
+  redSocial: 'FACEBOOK',
   estado: 'DISPONIBLE',
+  tipoDemo: '',
 };
 
 const ITEMS_POR_PAGINA = 15;
 
-function NumerosDemos({
+function PaginasDemos({
   busqueda,
   setBusqueda,
   filtroEstado,
   setFiltroEstado,
-  filtroAmbiente,
-  setFiltroAmbiente,
+  filtroRedSocial,
+  setFiltroRedSocial,
+  filtroTipoDemo,
+  setFiltroTipoDemo,
   recargarTrigger,
   showValidar,
   setShowValidar,
   showForm,
   setShowForm
 }) {
-  const [numeros, setNumeros] = useState([]);
+  const [paginas, setPaginas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const [paginaActual, setPaginaActual] = useState(1);
@@ -56,25 +60,25 @@ function NumerosDemos({
   // ── Estados de modales de confirmación ────────────────────────────────────
   const [showEliminarModal, setShowEliminarModal] = useState(false);
   const [showLiberarModal, setShowLiberarModal] = useState(false);
-  const [numeroToDelete, setNumeroToDelete] = useState(null);
-  const [numeroToLiberar, setNumeroToLiberar] = useState(null);
+  const [paginaToDelete, setPaginaToDelete] = useState(null);
+  const [paginaToLiberar, setPaginaToLiberar] = useState(null);
 
-  // Cargar números al iniciar
+  // Cargar páginas al iniciar
   useEffect(() => {
-    cargarNumeros();
+    cargarPaginas();
   }, []);
 
   // Recargar cuando cambia el trigger
   useEffect(() => {
     if (recargarTrigger > 0) {
-      cargarNumeros();
+      cargarPaginas();
     }
   }, [recargarTrigger]);
 
   // Resetear página cuando cambian los filtros
   useEffect(() => {
     setPaginaActual(1);
-  }, [filtroEstado, filtroAmbiente, busqueda]);
+  }, [filtroEstado, filtroRedSocial, busqueda]);
 
   const handleValidar = async () => {
     if (!dbValidar) {
@@ -84,7 +88,7 @@ function NumerosDemos({
     setValidando(true);
     setResultadoValidacion(null);
     try {
-      const response = await fetchWithAuth(API_URLS.numerosDemosValidar(), {
+      const response = await fetchWithAuth(API_URLS.paginasDemosValidar(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dbKey: dbValidar }),
@@ -92,9 +96,9 @@ function NumerosDemos({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Error al validar');
       setResultadoValidacion(data);
-      if (data.numerosActualizados > 0) {
-        toast.success(`✓ ${data.numerosActualizados} números actualizados en ${data.segmento}`);
-        cargarNumeros();
+      if (data.paginasActualizadas > 0) {
+        toast.success(`✓ ${data.paginasActualizadas} páginas actualizadas en ${data.segmento}`);
+        cargarPaginas();
       } else {
         toast.info(`No se encontraron coincidencias en ${data.segmento}`);
       }
@@ -105,15 +109,15 @@ function NumerosDemos({
     }
   };
 
-  const cargarNumeros = async () => {
+  const cargarPaginas = async () => {
     setLoading(true);
     try {
-      const response = await fetchWithAuth(API_URLS.numerosDemos());
-      if (!response.ok) throw new Error('Error al cargar números');
+      const response = await fetchWithAuth(API_URLS.paginasDemos());
+      if (!response.ok) throw new Error('Error al cargar páginas');
       const data = await response.json();
-      setNumeros(data);
+      setPaginas(data);
     } catch (error) {
-      toast.error('Error al cargar números: ' + error.message);
+      toast.error('Error al cargar páginas: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -121,17 +125,12 @@ function NumerosDemos({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.nombreApp || !formData.numero) {
-      toast.error('Nombre y número son obligatorios');
-      return;
-    }
 
     setLoading(true);
     try {
       const url = formData.id 
-        ? `/api/numeros-demos/${formData.id}` 
-        : '/api/numeros-demos';
+        ? `/api/paginas-demos/${formData.id}` 
+        : '/api/paginas-demos';
       const method = formData.id ? 'PUT' : 'POST';
 
       const response = await fetchWithAuth(url, {
@@ -145,10 +144,10 @@ function NumerosDemos({
         throw new Error(error.error || 'Error al guardar');
       }
 
-      toast.success(formData.id ? 'Número actualizado' : 'Número creado');
+      toast.success(formData.id ? 'Página actualizada' : 'Página creada');
       setShowForm(false);
       setFormData(DEFAULT_FORM);
-      cargarNumeros();
+      cargarPaginas();
     } catch (error) {
       toast.error('Error: ' + error.message);
     } finally {
@@ -156,32 +155,33 @@ function NumerosDemos({
     }
   };
 
-  const handleEditar = (numero) => {
+  const handleEditar = (pagina) => {
     setFormData({
-      id: numero.ID_NUMERO,
-      nombreApp: numero.NOMBRE_APP,
-      numero: numero.NUMERO,
-      authCode: numero.AUTH_CODE || '',
-      appId: numero.APP_ID || '',
-      ambiente: numero.AMBIENTE,
-      estado: numero.ESTADO,
+      id: pagina.ID_PAGINA,
+      nombrePagina: pagina.NOMBRE_PAGINA,
+      idPaginaFb: pagina.ID_PAGINA_FB || '',
+      token: pagina.TOKEN || '',
+      idPaginaIg: pagina.ID_PAGINA_IG || '',
+      nombreUsuarioIg: pagina.NOMBRE_USUARIO_IG || '',
+      redSocial: pagina.RED_SOCIAL,
+      estado: pagina.ESTADO,
     });
     setShowForm(true);
   };
 
   const handleEliminar = (id) => {
-    setNumeroToDelete(id);
+    setPaginaToDelete(id);
     setShowEliminarModal(true);
   };
 
   const confirmEliminar = async () => {
     setShowEliminarModal(false);
-    const id = numeroToDelete;
-    setNumeroToDelete(null);
+    const id = paginaToDelete;
+    setPaginaToDelete(null);
 
     setLoading(true);
     try {
-      const response = await fetchWithAuth(API_URLS.numerosDemos() + `/${id}`, {
+      const response = await fetchWithAuth(API_URLS.paginasDemos() + `/${id}`, {
         method: 'DELETE',
       });
 
@@ -190,8 +190,8 @@ function NumerosDemos({
         throw new Error(error.error || 'Error al eliminar');
       }
 
-      toast.success('Número eliminado');
-      cargarNumeros();
+      toast.success('Página eliminada');
+      cargarPaginas();
     } catch (error) {
       toast.error('Error: ' + error.message);
     } finally {
@@ -200,25 +200,25 @@ function NumerosDemos({
   };
 
   const handleLiberar = async (id) => {
-    setNumeroToLiberar(id);
+    setPaginaToLiberar(id);
     setShowLiberarModal(true);
   };
 
   const confirmLiberar = async () => {
     setShowLiberarModal(false);
-    const id = numeroToLiberar;
-    setNumeroToLiberar(null);
+    const id = paginaToLiberar;
+    setPaginaToLiberar(null);
 
     setLoading(true);
     try {
-      const response = await fetchWithAuth(API_URLS.numerosDemosLiberar(id), {
+      const response = await fetchWithAuth(API_URLS.paginasDemosLiberar(id), {
         method: 'POST',
       });
 
       if (!response.ok) throw new Error('Error al liberar');
 
-      toast.success('Número liberado');
-      cargarNumeros();
+      toast.success('Página liberada');
+      cargarPaginas();
     } catch (error) {
       toast.error('Error: ' + error.message);
     } finally {
@@ -226,21 +226,22 @@ function NumerosDemos({
     }
   };
 
-  const numerosFiltrados = numeros.filter(n => {
-    const matchEstado = filtroEstado === 'TODOS' || n.ESTADO === filtroEstado;
-    const matchAmbiente = filtroAmbiente === 'TODOS' || n.AMBIENTE === filtroAmbiente;
+  const paginasFiltradas = paginas.filter(p => {
+    const matchEstado = filtroEstado === 'TODOS' || p.ESTADO === filtroEstado;
+    const matchRedSocial = filtroRedSocial === 'TODOS' || p.RED_SOCIAL === filtroRedSocial;
+    const matchTipoDemo = filtroTipoDemo === 'TODOS' || p.TIPO_DEMO === filtroTipoDemo;
     const matchBusqueda = busqueda === '' || 
-      n.NOMBRE_APP.toLowerCase().includes(busqueda.toLowerCase()) ||
-      n.NUMERO.includes(busqueda) ||
-      (n.AUTH_CODE && n.AUTH_CODE.toLowerCase().includes(busqueda.toLowerCase())) ||
-      (n.APP_ID && n.APP_ID.toLowerCase().includes(busqueda.toLowerCase()));
-    return matchEstado && matchAmbiente && matchBusqueda;
+      p.NOMBRE_PAGINA.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (p.ID_PAGINA_FB && p.ID_PAGINA_FB.includes(busqueda)) ||
+      (p.ID_PAGINA_IG && p.ID_PAGINA_IG.includes(busqueda)) ||
+      (p.NOMBRE_USUARIO_IG && p.NOMBRE_USUARIO_IG.toLowerCase().includes(busqueda.toLowerCase()));
+    return matchEstado && matchRedSocial && matchTipoDemo && matchBusqueda;
   });
 
   // Paginación tabla principal
-  const totalPaginas = Math.ceil(numerosFiltrados.length / ITEMS_POR_PAGINA);
+  const totalPaginas = Math.ceil(paginasFiltradas.length / ITEMS_POR_PAGINA);
   const inicio = (paginaActual - 1) * ITEMS_POR_PAGINA;
-  const numerosPaginados = numerosFiltrados.slice(inicio, inicio + ITEMS_POR_PAGINA);
+  const paginasPaginadas = paginasFiltradas.slice(inicio, inicio + ITEMS_POR_PAGINA);
 
   const handlePaginaAnterior = () => {
     if (paginaActual > 1) setPaginaActual(p => p - 1);
@@ -266,8 +267,8 @@ function NumerosDemos({
         <div className="cr-inst-section" style={{ border: '2px solid #7c3aed', borderRadius: '10px' }}>
           <div className="cr-inst-section-header" style={{ background: '#f5f3ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h3 style={{ color: '#7c3aed', margin: 0 }}>🔍 Validar Números en Base de Datos</h3>
-              <small style={{ color: '#6d28d9' }}>Consulta qué números están activos en demos y actualiza el mapeo</small>
+              <h3 style={{ color: '#7c3aed', margin: 0 }}>🔍 Validar Páginas en Base de Datos</h3>
+              <small style={{ color: '#6d28d9' }}>Consulta qué páginas están activas en demos y actualiza el mapeo</small>
             </div>
             <button
               className="cr-inst-btn cr-inst-btn-small cr-inst-btn-danger"
@@ -316,8 +317,8 @@ function NumerosDemos({
             {resultadoValidacion && (
               <div style={{ marginTop: '16px' }}>
                 <div style={{
-                  background: resultadoValidacion.numerosActualizados > 0 ? '#f0fdf4' : '#fefce8',
-                  border: `1px solid ${resultadoValidacion.numerosActualizados > 0 ? '#86efac' : '#fde047'}`,
+                  background: resultadoValidacion.paginasActualizadas > 0 || resultadoValidacion.paginasNuevas > 0 ? '#f0fdf4' : '#fefce8',
+                  border: `1px solid ${resultadoValidacion.paginasActualizadas > 0 || resultadoValidacion.paginasNuevas > 0 ? '#86efac' : '#fde047'}`,
                   borderRadius: '8px',
                   padding: '12px 16px',
                   marginBottom: '12px'
@@ -333,7 +334,10 @@ function NumerosDemos({
                       Coincidencias: <span style={{ color: '#16a34a' }}>{resultadoValidacion.coincidenciasEncontradas}</span>
                     </span>
                     <span style={{ fontWeight: '600', color: '#374151' }}>
-                      Actualizados: <span style={{ color: '#dc2626' }}>{resultadoValidacion.numerosActualizados}</span>
+                      Actualizados: <span style={{ color: '#dc2626' }}>{resultadoValidacion.paginasActualizadas}</span>
+                    </span>
+                    <span style={{ fontWeight: '600', color: '#374151' }}>
+                      Nuevos: <span style={{ color: '#7c3aed' }}>{resultadoValidacion.paginasNuevas}</span>
                     </span>
                   </div>
                 </div>
@@ -342,24 +346,31 @@ function NumerosDemos({
                   <table className="cr-inst-table" style={{ fontSize: '12px' }}>
                     <thead>
                       <tr>
-                        <th>Nombre App</th>
-                        <th>Número</th>
-                        <th>Empresa en DB</th>
+                        <th>Acción</th>
                         <th>Bot</th>
-                        <th>ID Bot Redes</th>
+                        <th>Red Social</th>
+                        <th>ID Página FB</th>
+                        <th>ID Página IG</th>
+                        <th>Usuario IG</th>
+                        <th>Empresa en DB</th>
                         <th>Segmento</th>
+                        <th>Tipo Demo</th>
                       </tr>
                     </thead>
                     <tbody>
                       {resultadoValidacion.detalles.map((d, i) => (
                         <tr key={i}>
-                          <td><strong>{d.nombreApp}</strong></td>
-                          <td>{d.numero}</td>
                           <td>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                              <span style={{ fontWeight: '500' }}>{d.encontradoEn.nombreEmpresa}</span>
-                              <span style={{ fontSize: '11px', color: '#64748b' }}>ID: {d.encontradoEn.idEmpresa}</span>
-                            </div>
+                            <span style={{
+                              background: d.accion === 'nuevo' ? '#dbeafe' : '#fef3c7',
+                              color: d.accion === 'nuevo' ? '#1d4ed8' : '#d97706',
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              fontSize: '11px',
+                              fontWeight: '600'
+                            }}>
+                              {d.accion === 'nuevo' ? 'NUEVO' : 'ACTUALIZADO'}
+                            </span>
                           </td>
                           <td>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
@@ -367,7 +378,40 @@ function NumerosDemos({
                               <span style={{ fontSize: '11px', color: '#64748b' }}>ID: {d.encontradoEn.idBot}</span>
                             </div>
                           </td>
-                          <td>{d.encontradoEn.idBotRedes}</td>
+                          <td>{d.redSocial}</td>
+                          <td>
+                            {d.encontradoEn.idPaginaFb ? (
+                              <code style={{ fontSize: '11px', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>
+                                {d.encontradoEn.idPaginaFb}
+                              </code>
+                            ) : (
+                              <span className="text-muted" style={{ fontSize: '11px' }}>—</span>
+                            )}
+                          </td>
+                          <td>
+                            {d.encontradoEn.idPaginaIg ? (
+                              <code style={{ fontSize: '11px', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>
+                                {d.encontradoEn.idPaginaIg}
+                              </code>
+                            ) : (
+                              <span className="text-muted" style={{ fontSize: '11px' }}>—</span>
+                            )}
+                          </td>
+                          <td>
+                            {d.encontradoEn.nombreUsuarioIg ? (
+                              <code style={{ fontSize: '11px', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>
+                                {d.encontradoEn.nombreUsuarioIg}
+                              </code>
+                            ) : (
+                              <span className="text-muted" style={{ fontSize: '11px' }}>—</span>
+                            )}
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                              <span style={{ fontWeight: '500' }}>{d.encontradoEn.nombreEmpresa}</span>
+                              <span style={{ fontSize: '11px', color: '#64748b' }}>ID: {d.encontradoEn.idEmpresa}</span>
+                            </div>
+                          </td>
                           <td>
                             <span style={{
                               background: '#ede9fe',
@@ -380,6 +424,18 @@ function NumerosDemos({
                               {d.encontradoEn.segmento}
                             </span>
                           </td>
+                          <td>
+                            <span style={{
+                              background: d.tipoDemo === 'DEMO_TALKME' ? '#dcfce7' : d.tipoDemo === 'DEMO_PARTNER' ? '#fef9c3' : '#f3f4f6',
+                              color: d.tipoDemo === 'DEMO_TALKME' ? '#16a34a' : d.tipoDemo === 'DEMO_PARTNER' ? '#ca8a04' : '#6b7280',
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              fontSize: '11px',
+                              fontWeight: '600'
+                            }}>
+                              {d.tipoDemo || 'CLIENTE'}
+                            </span>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -388,7 +444,7 @@ function NumerosDemos({
 
                 {resultadoValidacion.detalles && resultadoValidacion.detalles.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '20px', color: '#64748b', fontSize: '13px' }}>
-                    ⚠️ No se encontraron coincidencias entre los números de la DB y los registrados en Demos
+                    ⚠️ No se encontraron coincidencias entre las páginas de la DB y las registradas en Demos
                   </div>
                 )}
               </div>
@@ -401,64 +457,99 @@ function NumerosDemos({
       {showForm && (
         <div className="cr-inst-section">
           <div className="cr-inst-section-header">
-            <h3>{formData.id ? '✏️ Editar Número' : '➕ Nuevo Número'}</h3>
+            <h3>{formData.id ? '✏️ Editar Página' : '➕ Nueva Página'}</h3>
           </div>
           <div className="cr-inst-section-body">
             <form onSubmit={handleSubmit}>
-              <div className="cr-inst-grid-3">
+              <div className="cr-inst-grid-2">
                 <div className="cr-inst-field">
-                  <label>Nombre App *</label>
+                  <label>Nombre Página</label>
                   <input
                     type="text"
-                    value={formData.nombreApp}
-                    onChange={(e) => setFormData({...formData, nombreApp: e.target.value})}
-                    placeholder="Ej: DemosTalkme24"
+                    value={formData.nombrePagina}
+                    onChange={(e) => setFormData({...formData, nombrePagina: e.target.value})}
+                    placeholder="Ej: Talkme Official (opcional)"
                     className="cr-inst-input"
-                    required
                   />
                 </div>
                 <div className="cr-inst-field">
-                  <label>Número *</label>
-                  <input
-                    type="text"
-                    value={formData.numero}
-                    onChange={(e) => setFormData({...formData, numero: e.target.value})}
-                    placeholder="Ej: 50378248640"
-                    className="cr-inst-input"
-                    required
-                  />
-                </div>
-                <div className="cr-inst-field">
-                  <label>Ambiente</label>
+                  <label>Red Social</label>
                   <select
-                    value={formData.ambiente}
-                    onChange={(e) => setFormData({...formData, ambiente: e.target.value})}
+                    value={formData.redSocial}
+                    onChange={(e) => setFormData({...formData, redSocial: e.target.value})}
                     className="cr-inst-select"
                   >
-                    {AMBIENTES.map(a => <option key={a} value={a}>{a}</option>)}
+                    {REDES_SOCIALES.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
               </div>
               <div className="cr-inst-grid-2" style={{ marginTop: '12px' }}>
                 <div className="cr-inst-field">
-                  <label>Auth Code</label>
+                  <label>ID Página Facebook</label>
                   <input
                     type="text"
-                    value={formData.authCode}
-                    onChange={(e) => setFormData({...formData, authCode: e.target.value})}
-                    placeholder="sk_..."
+                    value={formData.idPaginaFb}
+                    onChange={(e) => setFormData({...formData, idPaginaFb: e.target.value})}
+                    placeholder="ID de página FB..."
                     className="cr-inst-input"
                   />
                 </div>
                 <div className="cr-inst-field">
-                  <label>App ID</label>
+                  <label>Token</label>
                   <input
                     type="text"
-                    value={formData.appId}
-                    onChange={(e) => setFormData({...formData, appId: e.target.value})}
-                    placeholder="UUID..."
+                    value={formData.token}
+                    onChange={(e) => setFormData({...formData, token: e.target.value})}
+                    placeholder="Token de acceso..."
                     className="cr-inst-input"
                   />
+                </div>
+              </div>
+              <div className="cr-inst-grid-2" style={{ marginTop: '12px' }}>
+                <div className="cr-inst-field">
+                  <label>ID Página Instagram</label>
+                  <input
+                    type="text"
+                    value={formData.idPaginaIg}
+                    onChange={(e) => setFormData({...formData, idPaginaIg: e.target.value})}
+                    placeholder="ID de página IG..."
+                    className="cr-inst-input"
+                  />
+                </div>
+                <div className="cr-inst-field">
+                  <label>Nombre Usuario Instagram</label>
+                  <input
+                    type="text"
+                    value={formData.nombreUsuarioIg}
+                    onChange={(e) => setFormData({...formData, nombreUsuarioIg: e.target.value})}
+                    placeholder="@usuario..."
+                    className="cr-inst-input"
+                  />
+                </div>
+              </div>
+              <div className="cr-inst-grid-2" style={{ marginTop: '12px' }}>
+                <div className="cr-inst-field">
+                  <label>Tipo Demo</label>
+                  <select
+                    value={formData.tipoDemo || ''}
+                    onChange={(e) => setFormData({...formData, tipoDemo: e.target.value})}
+                    className="cr-inst-select"
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="DEMO_TALKME">DEMO_TALKME</option>
+                    <option value="DEMO_PARTNER">DEMO_PARTNER</option>
+                    <option value="CLIENTE">CLIENTE</option>
+                  </select>
+                </div>
+                <div className="cr-inst-field">
+                  <label>Estado</label>
+                  <select
+                    value={formData.estado}
+                    onChange={(e) => setFormData({...formData, estado: e.target.value})}
+                    className="cr-inst-select"
+                  >
+                    {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
                 </div>
               </div>
               <div className="cr-inst-actions" style={{ marginTop: '16px' }}>
@@ -483,10 +574,10 @@ function NumerosDemos({
         </div>
       )}
 
-      {/* Tabla de números */}
+      {/* Tabla de páginas */}
       <div className="cr-inst-section cr-inst-section-full" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
         <div className="cr-inst-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <h3>📋 Lista de Números ({numerosFiltrados.length})</h3>
+          <h3>📋 Lista de Páginas ({paginasFiltradas.length})</h3>
           {totalPaginas > 1 && (
             <div style={{ fontSize: '13px', color: '#64748b' }}>
               Página {paginaActual} de {totalPaginas}
@@ -497,72 +588,107 @@ function NumerosDemos({
           {loading ? (
             <div className="cr-inst-loading">
               <div className="cr-inst-spinner"></div>
-              <span>Cargando números...</span>
+              <span>Cargando páginas...</span>
             </div>
           ) : (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <table className="cr-inst-table">
                 <thead>
                   <tr>
-                    <th>Nombre App</th>
-                    <th>Número</th>
-                    <th>Auth Code</th>
-                    <th>App ID</th>
-                    <th>Ambiente</th>
+                    <th>Nombre Página</th>
+                    <th>Red Social</th>
+                    <th>ID Página FB</th>
+                    <th>Token</th>
+                    <th>ID Página IG</th>
+                    <th>Usuario IG</th>
                     <th>Estado</th>
                     <th>Segmento</th>
+                    <th>Tipo Demo</th>
                     <th>Empresa/Bot</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {numerosPaginados.map((n) => (
-                    <tr key={n.ID_NUMERO} className={n.ESTADO === 'OCUPADO' ? 'fila-ocupada' : ''}>
-                      <td><strong>{n.NOMBRE_APP}</strong></td>
-                      <td>{n.NUMERO}</td>
+                  {paginasPaginadas.map((p) => (
+                    <tr key={p.ID_PAGINA} className={p.ESTADO === 'OCUPADO' ? 'fila-ocupada' : ''}>
+                      <td><strong>{p.NOMBRE_PAGINA}</strong></td>
+                      <td><span className="badge-ambiente">{p.RED_SOCIAL}</span></td>
                       <td>
-                        {n.AUTH_CODE ? (
+                        {p.ID_PAGINA_FB ? (
                           <code style={{ fontSize: '11px', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>
-                            {n.AUTH_CODE.substring(0, 20)}...
+                            {p.ID_PAGINA_FB}
                           </code>
                         ) : (
                           <span className="text-muted" style={{ fontSize: '11px' }}>—</span>
                         )}
                       </td>
                       <td>
-                        {n.APP_ID ? (
+                        {p.TOKEN ? (
                           <code style={{ fontSize: '11px', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>
-                            {n.APP_ID.substring(0, 15)}...
+                            {p.TOKEN.substring(0, 20)}...
                           </code>
                         ) : (
                           <span className="text-muted" style={{ fontSize: '11px' }}>—</span>
                         )}
                       </td>
-                      <td><span className="badge-ambiente">{n.AMBIENTE}</span></td>
                       <td>
-                        <span className={`estado-badge ${getEstadoClass(n.ESTADO)}`}>
-                          {n.ESTADO}
+                        {p.ID_PAGINA_IG ? (
+                          <code style={{ fontSize: '11px', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>
+                            {p.ID_PAGINA_IG}
+                          </code>
+                        ) : (
+                          <span className="text-muted" style={{ fontSize: '11px' }}>—</span>
+                        )}
+                      </td>
+                      <td>
+                        {p.NOMBRE_USUARIO_IG ? (
+                          <code style={{ fontSize: '11px', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>
+                            {p.NOMBRE_USUARIO_IG}
+                          </code>
+                        ) : (
+                          <span className="text-muted" style={{ fontSize: '11px' }}>—</span>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`estado-badge ${getEstadoClass(p.ESTADO)}`}>
+                          {p.ESTADO}
                         </span>
                       </td>
                       <td>
-                        {n.SEGMENTO ? (
+                        {p.SEGMENTO ? (
                           <span style={{
-                            background: n.SEGMENTO.startsWith('F') ? '#ede9fe' : '#dbeafe',
-                            color: n.SEGMENTO.startsWith('F') ? '#7c3aed' : '#1d4ed8',
+                            background: p.SEGMENTO.startsWith('F') ? '#ede9fe' : '#dbeafe',
+                            color: p.SEGMENTO.startsWith('F') ? '#7c3aed' : '#1d4ed8',
                             padding: '2px 8px',
                             borderRadius: '10px',
                             fontSize: '11px',
                             fontWeight: '600'
-                          }}>{n.SEGMENTO}</span>
+                          }}>{p.SEGMENTO}</span>
                         ) : (
                           <span className="text-muted" style={{ fontSize: '11px' }}>—</span>
                         )}
                       </td>
                       <td>
-                        {n.NOMBRE_EMPRESA ? (
+                        {p.TIPO_DEMO ? (
+                          <span style={{
+                            background: p.TIPO_DEMO === 'DEMO_TALKME' ? '#dcfce7' : p.TIPO_DEMO === 'DEMO_PARTNER' ? '#fef9c3' : '#f3f4f6',
+                            color: p.TIPO_DEMO === 'DEMO_TALKME' ? '#16a34a' : p.TIPO_DEMO === 'DEMO_PARTNER' ? '#ca8a04' : '#6b7280',
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                            fontSize: '11px',
+                            fontWeight: '600'
+                          }}>
+                            {p.TIPO_DEMO}
+                          </span>
+                        ) : (
+                          <span className="text-muted" style={{ fontSize: '11px' }}>—</span>
+                        )}
+                      </td>
+                      <td>
+                        {p.NOMBRE_EMPRESA ? (
                           <div className="uso-info">
-                            <small style={{ fontWeight: '500' }}>{n.NOMBRE_EMPRESA}</small>
-                            <small className="text-muted">Bot ID: {n.ID_BOT}</small>
+                            <small style={{ fontWeight: '500' }}>{p.NOMBRE_EMPRESA}</small>
+                            <small className="text-muted">Bot ID: {p.ID_BOT}</small>
                           </div>
                         ) : (
                           <span className="text-muted">-</span>
@@ -572,15 +698,15 @@ function NumerosDemos({
                         <div className="acciones-row">
                           <button
                             className="cr-inst-btn cr-inst-btn-small cr-inst-btn-secondary"
-                            onClick={() => handleEditar(n)}
+                            onClick={() => handleEditar(p)}
                             title="Editar"
                           >
                             ✏️
                           </button>
-                          {n.ESTADO === 'OCUPADO' && (
+                          {p.ESTADO === 'OCUPADO' && (
                             <button
                               className="cr-inst-btn cr-inst-btn-small cr-inst-btn-success"
-                              onClick={() => handleLiberar(n.ID_NUMERO)}
+                              onClick={() => handleLiberar(p.ID_PAGINA)}
                               title="Liberar"
                             >
                               🔓
@@ -588,7 +714,7 @@ function NumerosDemos({
                           )}
                           <button
                             className="cr-inst-btn cr-inst-btn-small cr-inst-btn-danger"
-                            onClick={() => handleEliminar(n.ID_NUMERO)}
+                            onClick={() => handleEliminar(p.ID_PAGINA)}
                             title="Eliminar"
                           >
                             🗑️
@@ -597,10 +723,10 @@ function NumerosDemos({
                       </td>
                     </tr>
                   ))}
-                  {numerosPaginados.length === 0 && (
+                  {paginasPaginadas.length === 0 && (
                     <tr>
-                      <td colSpan="9" className="text-center text-muted" style={{ padding: '40px' }}>
-                        No se encontraron números con los filtros seleccionados
+                      <td colSpan="10" className="text-center text-muted" style={{ padding: '40px' }}>
+                        No se encontraron páginas con los filtros seleccionados
                       </td>
                     </tr>
                   )}
@@ -667,35 +793,35 @@ function NumerosDemos({
 
       <ConfirmModal
         show={showEliminarModal}
-        title="Eliminar Número"
+        title="Eliminar Página"
         confirmText="Eliminar"
         cancelText="Cancelar"
         confirmVariant="danger"
         onConfirm={confirmEliminar}
         onCancel={() => {
           setShowEliminarModal(false);
-          setNumeroToDelete(null);
+          setPaginaToDelete(null);
         }}
       >
-        <p>¿Está seguro de eliminar este número?</p>
+        <p>¿Está seguro de eliminar esta página?</p>
       </ConfirmModal>
 
       <ConfirmModal
         show={showLiberarModal}
-        title="Liberar Número"
+        title="Liberar Página"
         confirmText="Liberar"
         cancelText="Cancelar"
         confirmVariant="primary"
         onConfirm={confirmLiberar}
         onCancel={() => {
           setShowLiberarModal(false);
-          setNumeroToLiberar(null);
+          setPaginaToLiberar(null);
         }}
       >
-        <p>¿Liberar este número? Se marcará como DISPONIBLE.</p>
+        <p>¿Liberar esta página? Se marcará como DISPONIBLE.</p>
       </ConfirmModal>
     </div>
   );
 }
 
-export default NumerosDemos;
+export default PaginasDemos;

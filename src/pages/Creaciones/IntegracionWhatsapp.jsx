@@ -449,6 +449,19 @@ function IntegracionWhatsapp() {
   const [loadingBots, setLoadingBots] = useState(false);
   const [loadingBotRedes, setLoadingBotRedes] = useState(false);
   
+  // ── Estados para dropdowns con búsqueda ────────────────────────────────────
+  const [showEmpresaDropdown, setShowEmpresaDropdown] = useState(false);
+  const [empresaSearch, setEmpresaSearch] = useState('');
+  const empresaDropdownRef = useRef(null);
+  
+  const [showBotDropdown, setShowBotDropdown] = useState(false);
+  const [botSearch, setBotSearch] = useState('');
+  const botDropdownRef = useRef(null);
+  
+  const [showBotRedesDropdown, setShowBotRedesDropdown] = useState(false);
+  const [botRedesSearch, setBotRedesSearch] = useState('');
+  const botRedesDropdownRef = useRef(null);
+  
   // ── Estado para números demos ────────────────────────────────────────────
   const [numerosDisponibles, setNumerosDisponibles] = useState([]);
   const [loadingNumeros, setLoadingNumeros] = useState(false);
@@ -495,6 +508,23 @@ function IntegracionWhatsapp() {
     cargarNumerosDisponibles();
   }, []);
 
+  // ── Cerrar dropdowns al hacer clic fuera ─────────────────────────────────
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (empresaDropdownRef.current && !empresaDropdownRef.current.contains(event.target)) {
+        setShowEmpresaDropdown(false);
+      }
+      if (botDropdownRef.current && !botDropdownRef.current.contains(event.target)) {
+        setShowBotDropdown(false);
+      }
+      if (botRedesDropdownRef.current && !botRedesDropdownRef.current.contains(event.target)) {
+        setShowBotRedesDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const cargarEmpresas = async () => {
     setLoadingEmpresas(true);
     try {
@@ -528,7 +558,7 @@ function IntegracionWhatsapp() {
   const cargarBotRedes = async () => {
     setLoadingBotRedes(true);
     try {
-      const response = await fetchWithAuth(API_URLS.creacionesBotRedes(formData.dbKey, formData.idBot));
+      const response = await fetchWithAuth(`${API_URLS.creacionesBotRedes(formData.dbKey, formData.idBot)}&id_red_social=1`);
       if (!response.ok) throw new Error('Error al cargar bot_redes');
       const data = await response.json();
       setBotRedes(data);
@@ -982,53 +1012,167 @@ AND NOMBRE IN ('ENVIAR_MENU_INTERACTIVO','HABILITAR_USO_3BOTONES_INTERACTIVO','O
                 ))}
               </select>
             </div>
-            <div className="cr-inst-field">
+            <div className="cr-inst-field" ref={empresaDropdownRef}>
               <label className="cr-inst-required">Empresa</label>
-              <select
-                name="idEmpresa"
-                value={formData.idEmpresa}
-                onChange={handleChange}
-                disabled={loadingEmpresas}
+              <div
+                className={`cr-inst-select-dropdown ${showEmpresaDropdown ? 'open' : ''}`}
+                onClick={() => !loadingEmpresas && setShowEmpresaDropdown(v => !v)}
               >
-                <option value="">{loadingEmpresas ? 'Cargando...' : '-- Seleccione empresa --'}</option>
-                {empresas.map(emp => (
-                  <option key={emp.ID_EMPRESA} value={emp.ID_EMPRESA}>
-                    {emp.NOMBRE} (ID: {emp.ID_EMPRESA})
-                  </option>
-                ))}
-              </select>
+                {formData.idEmpresa ? (
+                  <span className="cr-inst-select-value">
+                    {empresas.find(e => String(e.ID_EMPRESA) === String(formData.idEmpresa))?.NOMBRE || 'Seleccionar...'}
+                  </span>
+                ) : (
+                  <span className="cr-inst-select-placeholder">
+                    {loadingEmpresas ? 'Cargando...' : '-- Seleccione empresa --'}
+                  </span>
+                )}
+                <span className="cr-inst-select-chevron">{showEmpresaDropdown ? '▲' : '▼'}</span>
+              </div>
+              {showEmpresaDropdown && (
+                <div className="cr-inst-dropdown-menu">
+                  <div className="cr-inst-dropdown-header">
+                    <input
+                      className="cr-inst-dropdown-search"
+                      type="text"
+                      placeholder="🔍 Buscar empresa..."
+                      value={empresaSearch}
+                      onChange={e => setEmpresaSearch(e.target.value)}
+                      onClick={ev => ev.stopPropagation()}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="cr-inst-dropdown-list">
+                    {empresas
+                      .filter(e => (e.NOMBRE || '').toLowerCase().includes(empresaSearch.toLowerCase()))
+                      .map(emp => (
+                        <div
+                          key={emp.ID_EMPRESA}
+                          className="cr-inst-dropdown-item"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, idEmpresa: String(emp.ID_EMPRESA) }));
+                            setShowEmpresaDropdown(false);
+                            setEmpresaSearch('');
+                          }}
+                        >
+                          <span className="cr-inst-dropdown-item-name">{emp.NOMBRE}</span>
+                          <span className="cr-inst-dropdown-item-id">ID: {emp.ID_EMPRESA}</span>
+                        </div>
+                      ))}
+                    {empresas.filter(e => (e.NOMBRE || '').toLowerCase().includes(empresaSearch.toLowerCase())).length === 0 && (
+                      <div className="cr-inst-dropdown-empty">No se encontraron empresas</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="cr-inst-field">
+            <div className="cr-inst-field" ref={botDropdownRef}>
               <label className="cr-inst-required">Bot</label>
-              <select
-                name="idBot"
-                value={formData.idBot}
-                onChange={handleChange}
-                disabled={!formData.idEmpresa || loadingBots}
+              <div
+                className={`cr-inst-select-dropdown ${showBotDropdown ? 'open' : ''}`}
+                onClick={() => !loadingBots && formData.idEmpresa && setShowBotDropdown(v => !v)}
               >
-                <option value="">{loadingBots ? 'Cargando...' : '-- Seleccione bot --'}</option>
-                {bots.map(bot => (
-                  <option key={bot.ID_BOT} value={bot.ID_BOT}>
-                    {bot.DESCRIPCION} (ID: {bot.ID_BOT})
-                  </option>
-                ))}
-              </select>
+                {formData.idBot ? (
+                  <span className="cr-inst-select-value">
+                    {bots.find(b => String(b.ID_BOT) === String(formData.idBot))?.DESCRIPCION || 'Seleccionar...'}
+                  </span>
+                ) : (
+                  <span className="cr-inst-select-placeholder">
+                    {!formData.idEmpresa ? 'Seleccione empresa primero' : (loadingBots ? 'Cargando...' : '-- Seleccione bot --')}
+                  </span>
+                )}
+                <span className="cr-inst-select-chevron">{showBotDropdown ? '▲' : '▼'}</span>
+              </div>
+              {showBotDropdown && (
+                <div className="cr-inst-dropdown-menu">
+                  <div className="cr-inst-dropdown-header">
+                    <input
+                      className="cr-inst-dropdown-search"
+                      type="text"
+                      placeholder="🔍 Buscar bot..."
+                      value={botSearch}
+                      onChange={e => setBotSearch(e.target.value)}
+                      onClick={ev => ev.stopPropagation()}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="cr-inst-dropdown-list">
+                    {bots
+                      .filter(b => (b.DESCRIPCION || '').toLowerCase().includes(botSearch.toLowerCase()))
+                      .map(bot => (
+                        <div
+                          key={bot.ID_BOT}
+                          className="cr-inst-dropdown-item"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, idBot: String(bot.ID_BOT) }));
+                            setShowBotDropdown(false);
+                            setBotSearch('');
+                          }}
+                        >
+                          <span className="cr-inst-dropdown-item-name">{bot.DESCRIPCION}</span>
+                          <span className="cr-inst-dropdown-item-id">ID: {bot.ID_BOT}</span>
+                        </div>
+                      ))}
+                    {bots.filter(b => (b.DESCRIPCION || '').toLowerCase().includes(botSearch.toLowerCase())).length === 0 && (
+                      <div className="cr-inst-dropdown-empty">No se encontraron bots</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="cr-inst-field">
+            <div className="cr-inst-field" ref={botRedesDropdownRef}>
               <label className="cr-inst-required">Bot Redes</label>
-              <select
-                name="idBotRedes"
-                value={formData.idBotRedes}
-                onChange={handleChange}
-                disabled={!formData.idBot || loadingBotRedes}
+              <div
+                className={`cr-inst-select-dropdown ${showBotRedesDropdown ? 'open' : ''}`}
+                onClick={() => !loadingBotRedes && formData.idBot && setShowBotRedesDropdown(v => !v)}
               >
-                <option value="">{loadingBotRedes ? 'Cargando...' : '-- Seleccione bot redes --'}</option>
-                {botRedes.map(br => (
-                  <option key={br.ID_BOT_REDES} value={br.ID_BOT_REDES}>
-                    {br.NOMBRE_RED} (ID: {br.ID_BOT_REDES})
-                  </option>
-                ))}
-              </select>
+                {formData.idBotRedes ? (
+                  <span className="cr-inst-select-value">
+                    {botRedes.find(br => String(br.ID_BOT_REDES) === String(formData.idBotRedes))?.NOMBRE_RED || 'Seleccionar...'}
+                  </span>
+                ) : (
+                  <span className="cr-inst-select-placeholder">
+                    {!formData.idBot ? 'Seleccione bot primero' : (loadingBotRedes ? 'Cargando...' : '-- Seleccione bot redes --')}
+                  </span>
+                )}
+                <span className="cr-inst-select-chevron">{showBotRedesDropdown ? '▲' : '▼'}</span>
+              </div>
+              {showBotRedesDropdown && (
+                <div className="cr-inst-dropdown-menu">
+                  <div className="cr-inst-dropdown-header">
+                    <input
+                      className="cr-inst-dropdown-search"
+                      type="text"
+                      placeholder="🔍 Buscar bot redes..."
+                      value={botRedesSearch}
+                      onChange={e => setBotRedesSearch(e.target.value)}
+                      onClick={ev => ev.stopPropagation()}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="cr-inst-dropdown-list">
+                    {botRedes
+                      .filter(br => (br.NOMBRE_RED || '').toLowerCase().includes(botRedesSearch.toLowerCase()))
+                      .map(br => (
+                        <div
+                          key={br.ID_BOT_REDES}
+                          className="cr-inst-dropdown-item"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, idBotRedes: String(br.ID_BOT_REDES) }));
+                            setShowBotRedesDropdown(false);
+                            setBotRedesSearch('');
+                          }}
+                        >
+                          <span className="cr-inst-dropdown-item-name">{br.NOMBRE_RED}</span>
+                          <span className="cr-inst-dropdown-item-id">ID: {br.ID_BOT_REDES}</span>
+                        </div>
+                      ))}
+                    {botRedes.filter(br => (br.NOMBRE_RED || '').toLowerCase().includes(botRedesSearch.toLowerCase())).length === 0 && (
+                      <div className="cr-inst-dropdown-empty">No se encontraron bot redes</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

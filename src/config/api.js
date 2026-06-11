@@ -271,6 +271,11 @@ export const API_URLS = {
   numerosDemosOcupar: (id) => `${API_BASE_URL}/api/numeros-demos/${id}/ocupar`,
   numerosDemosLiberar: (id) => `${API_BASE_URL}/api/numeros-demos/${id}/liberar`,
 
+  // Páginas demos endpoints
+  paginasDemos: () => `${API_BASE_URL}/api/paginas-demos`,
+  paginasDemosValidar: () => `${API_BASE_URL}/api/paginas-demos/validar`,
+  paginasDemosLiberar: (id) => `${API_BASE_URL}/api/paginas-demos/${id}/liberar`,
+
   // Horarios bots
   horariosBot: (db_key, id_bot) => `${API_BASE_URL}/api/horarios-bot?db_key=${db_key}&id_bot=${id_bot}`,
   horariosBotCrear: () => `${API_BASE_URL}/api/horarios-bot`,
