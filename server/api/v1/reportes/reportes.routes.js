@@ -267,7 +267,7 @@ router.post('/api/reportes/detallado', async (req, res) => {
         
         // Registrar auditoría
         try {
-            const auditoria = require('../../modules/auditoria');
+            const auditoria = require('../../modules/Configuraciones/Auditoria/auditoria');
             const { registrarLogInterno } = auditoria;
             if (registrarLogInterno) {
                 await registrarLogInterno({
@@ -384,7 +384,7 @@ router.post('/api/reportes/resumido', async (req, res) => {
         
         // Registrar auditoría
         try {
-            const auditoria = require('../../modules/auditoria');
+            const auditoria = require('../../modules/Configuraciones/Auditoria/auditoria');
             const { registrarLogInterno } = auditoria;
             if (registrarLogInterno) {
                 await registrarLogInterno({
@@ -562,7 +562,7 @@ router.post('/api/reportes/grupoq', async (req, res) => {
         
         // Registrar auditoría
         try {
-            const auditoria = require('../../modules/auditoria');
+            const auditoria = require('../../modules/Configuraciones/Auditoria/auditoria');
             const { registrarLogInterno } = auditoria;
             if (registrarLogInterno) {
                 await registrarLogInterno({
@@ -813,7 +813,7 @@ router.post('/api/reportes/api-notificaciones', async (req, res) => {
         
         // Registrar auditoría
         try {
-            const auditoria = require('../../modules/auditoria');
+            const auditoria = require('../../modules/Configuraciones/Auditoria/auditoria');
             const { registrarLogInterno } = auditoria;
             if (registrarLogInterno) {
                 await registrarLogInterno({

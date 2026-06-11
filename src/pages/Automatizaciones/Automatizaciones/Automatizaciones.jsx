@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ICONOS_MENU } from '../../components/MenuIcons';
-import Auditoria from '../Auditoria/Auditoria';
+import Auditoria from '../../Configuraciones/Auditoria/Auditoria';
 import CierreDeConversaciones from './CierreDeConversaciones/CierreDeConversaciones';
 import FacebookEliminacion from './FacebookEliminacion/FacebookEliminacion';
 import TagBot from './TagBot/TagBot';

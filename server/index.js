@@ -21,13 +21,13 @@ const diagramasBDRoutes = require('./modules/diagramasBD');
 const { router: skillsRoutes } = require('./modules/skills');
 const reportesRoutes = require('./modules/reportes2');
 const { router: schedulerRoutes } = require('./modules/scheduler');
-const { router: auditoriaRoutes, initAuditoria } = require('./modules/auditoria');
+const { router: seguridadRoutes, initAuditoriaSeguridad } = require('./modules/Configuraciones/Permisos/seguridad');
+const { router: usuariosQRMRoutes, initPools: initUsuariosQRMPools } = require('./modules/Configuraciones/Usuarios/usuariosQRM');
+const { router: auditoriaRoutes, initAuditoria } = require('./modules/Configuraciones/Auditoria/auditoria');
 const { initAuditoriaSkills } = require('./modules/skills');
 const { router: creacionesRoutes, init: initCreaciones } = require('./modules/creaciones');
-const { router: seguridadRoutes, initAuditoriaSeguridad } = require('./modules/seguridad');
-const { router: usuariosQRMRoutes, initPools: initUsuariosQRMPools } = require('./modules/usuariosQRM');
-const { router: permisosUsuariosRoutes, initPools: initPermisosUsuariosPools } = require('./modules/permisosUsuarios');
-const { router: asignacionMasivaRoutes, initPools: initAsignacionMasivaPools } = require('./modules/asignacionMasiva');
+const { router: permisosUsuariosRoutes, initPools: initPermisosUsuariosPools } = require('./modules/Configuraciones/Permisos/permisosUsuarios');
+const { router: asignacionMasivaRoutes, initPools: initAsignacionMasivaPools } = require('./modules/Configuraciones/Permisos/asignacionMasiva');
 const { router: historialRoutes, initPools: initHistorialPools } = require('./modules/historial');
 const { router: bitacoraAdministrativaRoutes, initBitacoraAdministrativa } = require('./modules/bitacoraAdministrativa');
 
@@ -222,7 +222,7 @@ app.use('/', schedulerRoutes);
 app.use('/', authRoutes);
 
 // Inicializar auditoría con el pool de control
-const auditoriaModulo = require('./modules/auditoria');
+const auditoriaModulo = require('./modules/Configuraciones/Auditoria/auditoria');
 initAuditoria(dbPools.control);
 initAuditoriaSkills(auditoriaModulo, dbPools.control);
 initAuditoriaSeguridad(auditoriaModulo);

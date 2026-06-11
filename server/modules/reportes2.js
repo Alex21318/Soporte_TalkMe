@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pools = require('../db');
-const { registrarLogInterno } = require('./auditoria');
+const { registrarLogInterno } = require('./Configuraciones/Auditoria/auditoria');
 
 // Helper: Limpiar caracteres corruptos por problemas de codificación UTF-8
 // SOLO reemplaza patrones específicos conocidos que están corruptos

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import GestionPermisos from './GestionPermisos';
-import SistemaUsuarios from './SistemaUsuarios';
-import Auditoria from '../Auditoria/Auditoria';
-import Temas from './Temas';
+import GestionPermisos from './Permisos y roles/GestionPermisos';
+import SistemaUsuarios from './Usuarios Sistema/SistemaUsuarios';
+import Auditoria from './Auditoria/Auditoria';
+import Temas from './Temas/Temas';
 import { hasModuleAccess } from '../../utils/permissions';
 import './Configuraciones.css';
 
