@@ -3,6 +3,7 @@ import GestionPermisos from './GestionPermisos';
 import SistemaUsuarios from './SistemaUsuarios';
 import Auditoria from '../Auditoria/Auditoria';
 import Temas from './Temas';
+import { hasModuleAccess } from '../../utils/permissions';
 import './Configuraciones.css';
 
 // Icono SVG para Permisos y Roles
@@ -49,16 +50,20 @@ const IconTemas = () => (
 
 // Submenú de configuraciones
 const menuItems = [
-  { id: 'permisos', name: 'Permisos y Roles', desc: 'Gestionar roles y permisos del sistema', icon: <IconPermisos /> },
-  { id: 'usuarios_sistema', name: 'Usuarios Sistema', desc: 'Gestión de usuarios del sistema', icon: <IconUsuariosSistema /> },
-  { id: 'auditoria', name: 'Auditoría', desc: 'Logs y registros de actividad', icon: <IconAuditoria /> },
+  { id: 'permisos', name: 'Permisos y Roles', desc: 'Gestionar roles y permisos del sistema', icon: <IconPermisos />, modulo: 'configuraciones' },
+  { id: 'usuarios_sistema', name: 'Usuarios Sistema', desc: 'Gestión de usuarios del sistema', icon: <IconUsuariosSistema />, modulo: 'usuarios_sistema' },
+  { id: 'auditoria', name: 'Auditoría', desc: 'Logs y registros de actividad', icon: <IconAuditoria />, modulo: 'auditoria' },
   { id: 'temas', name: 'Temas', desc: 'Personalizar colores y apariencia', icon: <IconTemas /> },
 ];
 
 function Configuraciones() {
   const [activeSubmenu, setActiveSubmenu] = useState('permisos');
 
+  const filteredItems = menuItems.filter(item => !item.modulo || hasModuleAccess(item.modulo));
+
   const renderContent = () => {
+    const item = filteredItems.find(i => i.id === activeSubmenu);
+    if (!item) return <GestionPermisos />;
     switch (activeSubmenu) {
       case 'permisos':
         return <GestionPermisos />;
@@ -91,7 +96,7 @@ function Configuraciones() {
         {/* SIDEBAR */}
         <div className="cr-sidebar">
           <p className="cr-sidebar-title">Acciones</p>
-          {menuItems.map((item) => (
+          {filteredItems.map((item) => (
             <button
               key={item.id}
               className={`cr-sidebar-item ${activeSubmenu === item.id ? 'active' : ''}`}

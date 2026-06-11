@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { fetchWithAuth } from '../../utils/fetchWithAuth';
+import { API_URLS } from '../../config/api';
 import sqlTemplate from './Creacion_nueva_instancia.sql?raw';
 import ConfirmModal from '../../components/ConfirmModal';
 
@@ -163,10 +164,10 @@ const getUsuarioLogueado = () => {
     const userInfo = sessionStorage.getItem('user_info');
     if (userInfo) {
       const parsed = JSON.parse(userInfo);
-      return parsed.usuario || parsed.NOMBRE_USUARIO || parsed.nombre || 'SISTEMA';
+      return parsed.usuario || parsed.NOMBRE_USUARIO || parsed.nombre || 'Sistema.TalkMe';
     }
   } catch {}
-  return 'SISTEMA';
+  return 'Sistema.TalkMe';
 };
 
 // ── Valores por defecto ───────────────────────────────────────────────────────
@@ -262,24 +263,9 @@ function CreacionInstancia() {
   }, []);
 
   useEffect(() => {
-    const cargarPlantillaSQL = async () => {
-      try {
-        const response = await fetchWithAuth(API_URLS.creacionesPlantillaSQL());
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'No se pudo cargar la plantilla SQL');
-        }
-
-        setPlantillaSQL(data.contenido);
-        setPlantillaEditor(data.contenido);
-        setMetadataPlantilla(data);
-      } catch (error) {
-        setPlantillaEditor(sqlTemplate);
-      }
-    };
-
-    cargarPlantillaSQL();
+    // Usar el archivo local directamente para evitar problemas de rutas en el backend
+    setPlantillaSQL(sqlTemplate);
+    setPlantillaEditor(sqlTemplate);
   }, []);
 
   // ── Auto-generar FOLDER_FILES cuando cambia el nombre ──
@@ -504,9 +490,32 @@ ${inserts.join('\n\n')}
     const escapeSql = (value) => String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "''");
     const replaceSet = (sql, variable, value, quote = true) => {
       const formattedValue = quote ? `'${escapeSql(value)}'` : String(value ?? '');
-      // Soportar espacios y tabulaciones \t que están en el archivo .sql original
-      const regex = new RegExp(`SET\\s+@${variable}[\\s\\t]*:=[\\s\\t]*[^;]*;`, 'i');
-      return sql.replace(regex, `SET @${variable} := ${formattedValue};`);
+      // Usar regex para encontrar la posición de SET @variable :=
+      const pattern = new RegExp(`SET\\s+@${variable}\\s*:=`, 'gi');
+      const match = pattern.exec(sql);
+      if (!match) return sql;
+      
+      const startIndex = match.index + match[0].length;
+      // Encontrar el valor actual y el punto y coma
+      let valueEnd = startIndex;
+      let inQuotes = false;
+      
+      for (let i = startIndex; i < sql.length; i++) {
+        const char = sql[i];
+        if (char === "'" && (i === startIndex || sql[i-1] !== '\\')) {
+          inQuotes = !inQuotes;
+        }
+        if (!inQuotes && char === ';') {
+          valueEnd = i;
+          break;
+        }
+      }
+      
+      // Reconstruir el SQL con el nuevo valor manteniendo espacios
+      const before = sql.slice(0, startIndex);
+      const after = sql.slice(valueEnd);
+      
+      return before + formattedValue + after;
     };
 
     return [

@@ -69,6 +69,7 @@ router.post('/diagramas/bot-menu', async (req, res) => {
                 BM.TAGS,
                 BM.VISIBLE,
                 BM.ID_SKILL,
+                S.NOMBRE_SKILL,
 
                 FF.TXT_DESC AS 'Formato Menú',
 
@@ -131,12 +132,14 @@ router.post('/diagramas/bot-menu', async (req, res) => {
 
             LEFT JOIN (
                 SELECT
+                    ID_BOT,
                     PALABRA_CLAVE,
                     MAX(RESPUESTA) AS RESPUESTA
                 FROM BOT_WS_RESPUESTA
-                GROUP BY PALABRA_CLAVE
+                WHERE ID_BOT = ?
+                GROUP BY ID_BOT, PALABRA_CLAVE
             ) BWR
-                ON BMP.PALABRA_CLAVE = BWR.PALABRA_CLAVE
+                ON BMP.PALABRA_CLAVE = BWR.PALABRA_CLAVE AND BM.ID_BOT = BWR.ID_BOT
 
             LEFT JOIN FORMATO_FB FF
                 ON BMP.ID_FORMATO_FB = FF.ID_FORMATO_FB
@@ -144,8 +147,11 @@ router.post('/diagramas/bot-menu', async (req, res) => {
             LEFT JOIN TIPOS_GESTION TG
                 ON BM.ID_TIPO_GESTION = TG.ID_TIPO_GESTION
 
+            LEFT JOIN SKILLS S
+                ON BM.ID_SKILL = S.ID_SKILL
+
             WHERE BM.ID_BOT = ?
-        `, [id_bot]);
+        `, [id_bot, id_bot]);
 
         // 2. Obtener preguntas, opciones, derivaciones y textos de respuesta para cada menú
         const menuIds = menus.map(m => m.ID_BOT_MENU);
@@ -372,10 +378,8 @@ router.post('/diagramas/bot-menu', async (req, res) => {
             const rawImg = String(menu.IMAGEN || '').trim();
             const rawFile = String(menu.ARCHIVO || '').trim();
             
-            let fileDetails = getDetails(rawImg);
-            if (fileDetails.type === 'none') {
-                fileDetails = getDetails(rawFile);
-            }
+            const imgDetails = getDetails(rawImg);
+            const fileDetails = getDetails(rawFile);
 
             // --- Crear nodo exactamente como en excelParser ---
             // Solo mostrar respuestaFinal si el nodo tiene preguntas (tiene formulario)
@@ -393,13 +397,13 @@ router.post('/diagramas/bot-menu', async (req, res) => {
                     latitud: menu.LATITUD || '',
                     longitud: menu.LONGITUD || '',
                     
-                    imagen: fileDetails.type === 'image' ? fileDetails.url : '',
-                    fileType: fileDetails.type, 
-                    fileUrl: fileDetails.type !== 'image' ? fileDetails.url : '',
-                    archivo: fileDetails.type === 'none' ? (rawImg || rawFile) : '', 
+                    imagen: imgDetails.type === 'image' ? imgDetails.url : '',
+                    fileType: fileDetails.type !== 'none' ? fileDetails.type : '',
+                    fileUrl: fileDetails.url,
+                    archivo: (imgDetails.type === 'none' && fileDetails.type === 'none') ? (rawImg || rawFile) : '', 
 
                     respuestaFinal: tieneFormulario ? (menu['Respuesta Final Formulario'] || '') : '', // Solo si tiene formulario
-                    skill: menu.ID_SKILL ? `Skill ${menu.ID_SKILL}` : '',
+                    skill: menu.NOMBRE_SKILL || '',
                     visible: menu.VISIBLE === 1 ? 'Visible' : 'No Visible',
                     cierreTipologia: menu['Cierre de tipologia'] || '',
                     parentId: parentId,

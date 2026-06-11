@@ -123,6 +123,7 @@ function Sidebar({ user, onLogout }) {
   const menuItems = [
     { path: '/usuarios', name: 'Usuarios', Icon: IconUsuarios, modulo: 'usuarios_sistema' },
     { path: '/horarios', name: 'Horarios', Icon: IconSkills, modulo: 'horarios' },
+    { path: '/diagramas', name: 'Diagramas Excel', Icon: IconDiagramas, modulo: 'diagramas' },
     { path: '/diagramas-bd', name: 'Diagramas', Icon: IconDiagramasBD, modulo: 'diagramas' },
     { path: '/reportes', name: 'Reportes', Icon: IconReportes, modulo: 'auditoria' },
     { path: '/cierres', name: 'Automatizaciones', Icon: IconAutomatizaciones, modulo: 'automatizaciones' },

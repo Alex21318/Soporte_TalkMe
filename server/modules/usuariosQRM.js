@@ -400,23 +400,35 @@ router.post('/api/usuarios-qrm', async (req, res) => {
     
     try {
         const dbDestino = pools[db_key];
-        const usuarioLogueado = 'alex.carrera';
+        const usuarioLogueado = req.session?.usuario || 'sistema';
         
-        // Verificar si ya existe configuración para este usuario
+        // Verificar si ya existe configuración para este usuario (incluyendo eliminados)
         const [existente] = await dbDestino.query(
-            'SELECT ID_INFO_USUARIO FROM GQ_QRM_INFO_USUARIO WHERE ID_USUARIO = ? AND ID_BOT_SOCIEDAD = ? AND ELIMINADO = 0',
+            'SELECT ID_INFO_USUARIO, ELIMINADO FROM GQ_QRM_INFO_USUARIO WHERE ID_USUARIO = ? AND ID_BOT_SOCIEDAD = ?',
             [id_usuario, id_bot_sociedad]
         );
         
         if (existente.length > 0) {
-            // Actualizar
-            await dbDestino.query(
-                `UPDATE GQ_QRM_INFO_USUARIO 
-                 SET ID_DEPARTAMENTO = ?, ID_SUCURSAL = ?, ID_VENDEDOR = ?, USUARIO_QRM = ?, 
-                     MODIFICADO_POR = ?, MODIFICADO_EL = NOW()
-                 WHERE ID_INFO_USUARIO = ?`,
-                [id_departamento || 0, id_sucursal || 0, id_vendedor || 0, usuario_qrm || '', usuarioLogueado, existente[0].ID_INFO_USUARIO]
-            );
+            const config = existente[0];
+            if (config.ELIMINADO === 1) {
+                // Reactivar el registro eliminado
+                await dbDestino.query(
+                    `UPDATE GQ_QRM_INFO_USUARIO 
+                     SET ID_DEPARTAMENTO = ?, ID_SUCURSAL = ?, ID_VENDEDOR = ?, USUARIO_QRM = ?, 
+                         ELIMINADO = 0, MODIFICADO_POR = ?, MODIFICADO_EL = NOW()
+                     WHERE ID_INFO_USUARIO = ?`,
+                    [id_departamento || 0, id_sucursal || 0, id_vendedor || 0, usuario_qrm || '', usuarioLogueado, config.ID_INFO_USUARIO]
+                );
+            } else {
+                // Actualizar el registro existente
+                await dbDestino.query(
+                    `UPDATE GQ_QRM_INFO_USUARIO 
+                     SET ID_DEPARTAMENTO = ?, ID_SUCURSAL = ?, ID_VENDEDOR = ?, USUARIO_QRM = ?, 
+                         MODIFICADO_POR = ?, MODIFICADO_EL = NOW()
+                     WHERE ID_INFO_USUARIO = ?`,
+                    [id_departamento || 0, id_sucursal || 0, id_vendedor || 0, usuario_qrm || '', usuarioLogueado, config.ID_INFO_USUARIO]
+                );
+            }
         } else {
             // Insertar nuevo
             await dbDestino.query(
@@ -432,6 +444,59 @@ router.post('/api/usuarios-qrm', async (req, res) => {
     } catch (err) {
         console.error('Error al guardar config QRM:', err);
         res.status(500).json({ error: 'Error al guardar configuración', details: err.message });
+    }
+});
+
+// 🔹 USUARIOS QRM - Editar configuración (PUT)
+router.put('/api/usuarios-qrm', async (req, res) => {
+    const { db_key, id_info_usuario } = req.query;
+    const { id_usuario, id_bot_sociedad, id_departamento, id_sucursal, id_vendedor, usuario_qrm } = req.body;
+    
+    if (!db_key || !pools[db_key]) {
+        return res.status(400).json({ error: 'db_key requerido' });
+    }
+    if (!id_info_usuario) {
+        return res.status(400).json({ error: 'id_info_usuario requerido' });
+    }
+    
+    try {
+        const dbDestino = pools[db_key];
+        const usuarioLogueado = req.session?.usuario || 'sistema';
+        
+        // Obtener el registro actual para preservar valores si no se envían
+        const [actual] = await dbDestino.query(
+            'SELECT * FROM GQ_QRM_INFO_USUARIO WHERE ID_INFO_USUARIO = ?',
+            [id_info_usuario]
+        );
+        
+        if (actual.length === 0) {
+            return res.status(404).json({ error: 'Configuración no encontrada' });
+        }
+        
+        const configActual = actual[0];
+        
+        // Usar valores enviados o mantener los actuales
+        // Solo preservar si el campo es undefined o null, no si es cadena vacía
+        const nuevoIdUsuario = id_usuario !== undefined && id_usuario !== null ? id_usuario : configActual.ID_USUARIO;
+        const nuevoIdBotSociedad = id_bot_sociedad !== undefined && id_bot_sociedad !== null ? id_bot_sociedad : configActual.ID_BOT_SOCIEDAD;
+        const nuevoIdDepartamento = id_departamento !== undefined && id_departamento !== null ? id_departamento : configActual.ID_DEPARTAMENTO;
+        const nuevoIdSucursal = id_sucursal !== undefined && id_sucursal !== null ? id_sucursal : configActual.ID_SUCURSAL;
+        const nuevoIdVendedor = id_vendedor !== undefined && id_vendedor !== null ? id_vendedor : configActual.ID_VENDEDOR;
+        const nuevoUsuarioQrm = usuario_qrm !== undefined && usuario_qrm !== null ? usuario_qrm : configActual.USUARIO_QRM;
+        
+        await dbDestino.query(
+            `UPDATE GQ_QRM_INFO_USUARIO 
+             SET ID_USUARIO = ?, ID_BOT_SOCIEDAD = ?, ID_DEPARTAMENTO = ?, ID_SUCURSAL = ?, 
+                 ID_VENDEDOR = ?, USUARIO_QRM = ?, MODIFICADO_POR = ?, MODIFICADO_EL = NOW()
+             WHERE ID_INFO_USUARIO = ?`,
+            [nuevoIdUsuario, nuevoIdBotSociedad, nuevoIdDepartamento, nuevoIdSucursal, nuevoIdVendedor, nuevoUsuarioQrm, usuarioLogueado, id_info_usuario]
+        );
+        
+        res.json({ success: true, message: 'Configuración actualizada' });
+        
+    } catch (err) {
+        console.error('Error al actualizar config QRM:', err);
+        res.status(500).json({ error: 'Error al actualizar configuración', details: err.message });
     }
 });
 

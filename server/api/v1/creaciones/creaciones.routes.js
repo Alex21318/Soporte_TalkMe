@@ -16,7 +16,7 @@ let poolControl = null;
 let registrarAuditoria = null;
 
 const instruccionesBloqueadasScript = /\b(DROP|TRUNCATE|ALTER\s+DATABASE|CREATE\s+DATABASE|USE\s+|GRANT|REVOKE)\b/i;
-const plantillaSqlPath = path.join(__dirname, '..', 'src', 'pages', 'Creaciones', 'Creacion_nueva_instancia.sql');
+const plantillaSqlPath = path.join(process.cwd(), 'src', 'pages', 'Creaciones', 'Creacion_nueva_instancia.sql');
 
 // Inicializar con referencias necesarias
 function init(pool, auditoriaFn) {

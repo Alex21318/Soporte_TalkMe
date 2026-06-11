@@ -145,17 +145,33 @@ const requirePermission = (modulo, accion) => {
 
             // Verificar permisos individuales del usuario (con try-catch por si la tabla no existe)
             let tienePermisoUsuario = false;
+            let tienePermisoNegado = false;
             try {
                 const [permisosUsuario] = await dbControl.query(`
                     SELECT COUNT(*) as tiene_permiso
                     FROM USUARIO_PERMISOS up
                     INNER JOIN PERMISOS p ON up.permiso_id = p.id
-                    WHERE up.usuario_id = ? AND p.modulo = ? AND p.accion = ?
+                    WHERE up.usuario_id = ? AND p.modulo = ? AND p.accion = ? AND up.ESTADO = 'H'
                 `, [req.user.id, modulo, accion]);
                 tienePermisoUsuario = permisosUsuario[0].tiene_permiso > 0;
+
+                // Verificar si el permiso está negado explícitamente
+                const [permisosNegados] = await dbControl.query(`
+                    SELECT COUNT(*) as tiene_permiso
+                    FROM USUARIO_PERMISOS up
+                    INNER JOIN PERMISOS p ON up.permiso_id = p.id
+                    WHERE up.usuario_id = ? AND p.modulo = ? AND p.accion = ? AND up.ESTADO = 'N'
+                `, [req.user.id, modulo, accion]);
+                tienePermisoNegado = permisosNegados[0].tiene_permiso > 0;
             } catch (error) {
                 console.log('[AUTH] Tabla USUARIO_PERMISOS no existe o error:', error.message);
                 // Si la tabla no existe, continuar sin permisos individuales
+            }
+
+            // Si está negado explícitamente, no tiene permiso (aunque el rol lo conceda)
+            if (tienePermisoNegado) {
+                tienePermisoRol = false;
+                tienePermisoUsuario = false;
             }
 
             // Tiene permiso si lo tiene por rol o individualmente
@@ -295,25 +311,35 @@ router.post('/api/auth/login', async (req, res) => {
         }
 
         // Obtener permisos individuales del usuario (con try-catch por si la tabla no existe)
-        let permisosIndividuales = [];
+        let permisosH = [];
+        let permisosN = [];
         try {
-            const [permisosIndividualesResult] = await dbControl.query(`
+            const [permisosHResult] = await dbControl.query(`
                 SELECT p.modulo, p.accion
                 FROM USUARIO_PERMISOS up
                 INNER JOIN PERMISOS p ON up.permiso_id = p.id
-                WHERE up.usuario_id = ?
+                WHERE up.usuario_id = ? AND up.ESTADO = 'H'
             `, [user.id]);
-            permisosIndividuales = permisosIndividualesResult;
+            permisosH = permisosHResult;
+            const [permisosNResult] = await dbControl.query(`
+                SELECT p.modulo, p.accion
+                FROM USUARIO_PERMISOS up
+                INNER JOIN PERMISOS p ON up.permiso_id = p.id
+                WHERE up.usuario_id = ? AND up.ESTADO = 'N'
+            `, [user.id]);
+            permisosN = permisosNResult;
         } catch (error) {
-            // Si la tabla no existe, continuar sin permisos individuales
+            // Si la tabla no existe o no tiene columna ESTADO, continuar sin permisos individuales
         }
 
-        const permisosIndividualesFormat = permisosIndividuales.map(p => `${p.modulo}:${p.accion}`);
+        const permisosHFormat = permisosH.map(p => `${p.modulo}:${p.accion}`);
+        const permisosNFormat = permisosN.map(p => `${p.modulo}:${p.accion}`);
 
-        // Combinar permisos (individuales sobrescriben los del rol)
+        // Combinar permisos: rol + habilitados - negados
         const permisosMap = new Map();
         permissions.forEach(p => permisosMap.set(p, p));
-        permisosIndividualesFormat.forEach(p => permisosMap.set(p, p));
+        permisosHFormat.forEach(p => permisosMap.set(p, p));
+        permisosNFormat.forEach(p => permisosMap.delete(p));
 
         const finalPermissions = Array.from(permisosMap.values());
 
@@ -353,25 +379,35 @@ router.get('/api/auth/verify', authMiddleware, async (req, res) => {
         }
 
         // Obtener permisos individuales del usuario (con try-catch por si la tabla no existe)
-        let permisosIndividuales = [];
+        let permisosH = [];
+        let permisosN = [];
         try {
-            const [permisosIndividualesResult] = await dbControl.query(`
+            const [permisosHResult] = await dbControl.query(`
                 SELECT p.modulo, p.accion
                 FROM USUARIO_PERMISOS up
                 INNER JOIN PERMISOS p ON up.permiso_id = p.id
-                WHERE up.usuario_id = ?
+                WHERE up.usuario_id = ? AND up.ESTADO = 'H'
             `, [req.user.id]);
-            permisosIndividuales = permisosIndividualesResult;
+            permisosH = permisosHResult;
+            const [permisosNResult] = await dbControl.query(`
+                SELECT p.modulo, p.accion
+                FROM USUARIO_PERMISOS up
+                INNER JOIN PERMISOS p ON up.permiso_id = p.id
+                WHERE up.usuario_id = ? AND up.ESTADO = 'N'
+            `, [req.user.id]);
+            permisosN = permisosNResult;
         } catch (error) {
-            // Si la tabla no existe, continuar sin permisos individuales
+            // Si la tabla no existe o no tiene columna ESTADO, continuar sin permisos individuales
         }
 
-        const permisosIndividualesFormat = permisosIndividuales.map(p => `${p.modulo}:${p.accion}`);
+        const permisosHFormat = permisosH.map(p => `${p.modulo}:${p.accion}`);
+        const permisosNFormat = permisosN.map(p => `${p.modulo}:${p.accion}`);
 
-        // Combinar permisos (individuales sobrescriben los del rol)
+        // Combinar permisos: rol + habilitados - negados
         const permisosMap = new Map();
         permissions.forEach(p => permisosMap.set(p, p));
-        permisosIndividualesFormat.forEach(p => permisosMap.set(p, p));
+        permisosHFormat.forEach(p => permisosMap.set(p, p));
+        permisosNFormat.forEach(p => permisosMap.delete(p));
 
         res.json({
             success: true,
@@ -800,28 +836,39 @@ router.get('/api/auth/users/:id/permisos', authMiddleware, async (req, res) => {
             permisosRol = permisos;
         }
 
-        // Obtener permisos individuales del usuario (con try-catch por si la tabla no existe)
-        let permisosIndividuales = [];
+        // Obtener permisos individuales del usuario (H=habilitado, N=negado)
+        let permisosH = [];
+        let permisosN = [];
         try {
-            const [permisosIndividualesResult] = await dbControl.query(`
+            const [permisosHResult] = await dbControl.query(`
                 SELECT p.*
                 FROM PERMISOS p
                 INNER JOIN USUARIO_PERMISOS up ON p.id = up.permiso_id
-                WHERE up.usuario_id = ?
+                WHERE up.usuario_id = ? AND up.ESTADO = 'H'
             `, [usuarioId]);
-            permisosIndividuales = permisosIndividualesResult;
+            permisosH = permisosHResult;
+            const [permisosNResult] = await dbControl.query(`
+                SELECT p.*
+                FROM PERMISOS p
+                INNER JOIN USUARIO_PERMISOS up ON p.id = up.permiso_id
+                WHERE up.usuario_id = ? AND up.ESTADO = 'N'
+            `, [usuarioId]);
+            permisosN = permisosNResult;
         } catch (error) {
-            // Si la tabla no existe, continuar sin permisos individuales
+            // Si la tabla no existe o no tiene columna ESTADO
         }
 
-        // Combinar permisos (prioridad a individuales sobre los del rol)
+        // Combinar permisos: rol + habilitados - negados
         const permisosMap = new Map();
 
         // Primero agregar permisos del rol
         permisosRol.forEach(p => permisosMap.set(p.id, p));
 
-        // Luego sobrescribir con permisos individuales
-        permisosIndividuales.forEach(p => permisosMap.set(p.id, p));
+        // Luego agregar permisos individuales habilitados
+        permisosH.forEach(p => permisosMap.set(p.id, p));
+
+        // Finalmente, remover permisos negados
+        permisosN.forEach(p => permisosMap.delete(p.id));
 
         const finalPermisos = Array.from(permisosMap.values());
 
@@ -843,13 +890,40 @@ router.post('/api/auth/users/:id/permisos', authMiddleware, async (req, res) => 
         const dbControl = pools['control'];
         const usuarioId = req.params.id;
 
-        // Eliminar permisos directos actuales del usuario
+        // Obtener permisos del rol del usuario
+        const [usuario] = await dbControl.query(
+            'SELECT rol_id FROM USUARIOS_SISTEMA WHERE id = ?',
+            [usuarioId]
+        );
+
+        let permisoIdsRol = [];
+        if (usuario && usuario[0] && usuario[0].rol_id) {
+            const [permisosRol] = await dbControl.query(
+                'SELECT permiso_id FROM ROL_PERMISOS WHERE rol_id = ?',
+                [usuario[0].rol_id]
+            );
+            permisoIdsRol = permisosRol.map(rp => rp.permiso_id);
+        }
+
+        // Calcular permisos habilitados (H) y negados (N):
+        // H = permisos marcados que NO estan en el rol (son adicionales)
+        // N = permisos del rol que NO estan marcados (se niegan explicitamente)
+        const habilitaIds = permisoIds.filter(id => !permisoIdsRol.includes(id));
+        const niegaIds = permisoIdsRol.filter(id => !permisoIds.includes(id));
+
+        // Eliminar todos los permisos individuales actuales del usuario
         await dbControl.query('DELETE FROM USUARIO_PERMISOS WHERE usuario_id = ?', [usuarioId]);
 
-        // Insertar nuevos permisos directos
-        if (permisoIds.length > 0) {
-            const values = permisoIds.map(permisoId => `(${usuarioId}, ${permisoId})`).join(',');
-            await dbControl.query(`INSERT INTO USUARIO_PERMISOS (usuario_id, permiso_id) VALUES ${values}`);
+        // Insertar permisos habilitados (H)
+        if (habilitaIds.length > 0) {
+            const valuesH = habilitaIds.map(permisoId => `(${usuarioId}, ${permisoId}, 'H')`).join(',');
+            await dbControl.query(`INSERT INTO USUARIO_PERMISOS (usuario_id, permiso_id, ESTADO) VALUES ${valuesH}`);
+        }
+
+        // Insertar permisos negados (N)
+        if (niegaIds.length > 0) {
+            const valuesN = niegaIds.map(permisoId => `(${usuarioId}, ${permisoId}, 'N')`).join(',');
+            await dbControl.query(`INSERT INTO USUARIO_PERMISOS (usuario_id, permiso_id, ESTADO) VALUES ${valuesN}`);
         }
 
         res.json({ success: true, message: 'Permisos del usuario actualizados correctamente' });

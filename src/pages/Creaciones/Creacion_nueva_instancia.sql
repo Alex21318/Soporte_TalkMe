@@ -10,30 +10,30 @@
 
 /* DATOS DE LA EMPRESA */                   
 
-SET @EmpresaNombre    		:= 'Grupo Master';
-SET @NombreBOT        		:= 'Grupo Master';
-SET @EmpresaTelefono  		:= 'NA';
-SET @EmpresaCorreo    		:= 'NA';
-SET @EmpresaDireccion 		:= 'NA';
-SET @creadoPor        		:= 'Sistema.TalkMe';
-SET @socketUrl              := 'https://cloud-s4.talkme.pro';
-SET @URLEnvioNotificaciones := 'https://cloud-s4.consystec-corp.com';
+SET @EmpresaNombre := 'ASECOM';
+SET @NombreBOT := 'Atencion al usuario';
+SET @EmpresaTelefono := 'NA';
+SET @EmpresaCorreo := 'NA';
+SET @EmpresaDireccion := 'Guatemala';
+SET @creadoPor := 'Sistema.TalkMe';
+SET @socketUrl := 'https://wss.talkme.pro';
+SET @URLEnvioNotificaciones := 'https://cloud.consystec-corp.com';
 
 
 -- SET @socketUrl        		:= 'https://cloud-s4.talkme.pro';
 --  SET @URLEnvioNotificaciones := 'https://cloud-s4.consystec-corp.com';
 	
-SET @tokenEmpresa       := 'QRAjZTfzkAZ3PyUPP4g6cXqAPEsIbrGpNgHnkVVJfCEDRBrVKw';
-SET @tokenConsystec     := 'token_consystec';
+SET @tokenEmpresa := 'ZP1HFrR2udcp4j5Ma1k56xcu6B1W9KVfqjvna2eTdV1VVMhG1S';
+SET @tokenConsystec := 'token_consystec';
 SET @fechaInicioPaquete := '2026-05-01 06:00:00';
-SET @fechaFinPaquete    := '2026-06-01 05:59:59';
+SET @fechaFinPaquete := '2026-06-01 05:59:59';
 
 /*  DATOS DE CONTACTO    */
-SET @nombreContacto   := 'Karla Barrios';
-SET @telefonoContacto := '50256333085';
+SET @nombreContacto := 'na';
+SET @telefonoContacto := 'na';
 
 /* TELEFONO DE WHATSAPP PARA WEBCHAT */
-SET @TELEFONO_WHATSAPP_WEBCHAT := '502';
+SET @TELEFONO_WHATSAPP_WEBCHAT := '';
 SET @Moneda := 'Q';
 SET @CodMoneda := 'GTQ';
 SET @idPais := 1;
@@ -66,16 +66,16 @@ SET @UTILIZAR_S3  := '1'; -- SI LA EMPRESA VA A UTILIZAR S3, COLOCAR EL VALOR 1,
 -- Grupo Resurrección ---> gruporesurreccion
 -- Doña Lucia ---> donalucia
 -- 
-SET @FOLDER_FILES  := 'grupo_master/grupo_master';
+SET @FOLDER_FILES := 'asecom/atencion_al_usuario';
 
-SET @Correo_cliente := 'karla.barrios@talkme.pro';
+SET @Correo_cliente := 'emanuel.ramos@consystec-corp.com';
 
 /* **************************************************************************************************    */
 /*  ----------------------- SE TERMINAN DE SETEAR CAMPOS DE INFORMACION -----------------------------    */
 /* **************************************************************************************************    */
 
-SET @Correo_interno := 'ventas@consystec-corp.com,vinicio.sanchez@consystec-corp.com,karla.barrios@talkme.pro';
-SET @Correo_interno_paquetes := 'ventas@consystec-corp.com,soporte.talkme@consystec-corp.com,karla.barrios@talkme.pro';
+SET @Correo_interno := 'ventas@consystec-corp.com,vinicio.sanchez@consystec-corp.com,emanuel.ramos@consystec-corp.com';
+SET @Correo_interno_paquetes := 'ventas@consystec-corp.com,soporte.talkme@consystec-corp.com,emanuel.ramos@consystec-corp.com';
 SET @intervalo_notificacion_cliente := 45;
 SET @activar_alertas_amarillo := 5;
 SET @limite_amarillo := 5;
@@ -1401,101 +1401,33 @@ VALUES(@EmpresaID,@nombreContacto, @Correo_cliente, @telefonoContacto, NOW(), @c
 /* CREANDO BOT REDES Y BOT REDES BETA */
 /*****************************/
 
-/* BOT_REDES  */
+/* BOT_REDES - Generado según selección de la ventana */
 
+-- WhatsApp
 INSERT INTO BOT_REDES (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, TIPO_CLIENTE, CREADO_EL, CREADO_POR) 
 VALUES (@BotID, @idPais, '1', '1', '1', NOW(), @creadoPor);
 
-SELECT @BotRedesWhatsapp :=  LAST_INSERT_ID();
-/*
-INSERT INTO BOT_REDES (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO,BAJO_DEMANDA, TIPO_CLIENTE, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '7', '1',1,1, NOW(), @creadoPor);
+SELECT @BotRedesWhatsapp := LAST_INSERT_ID();
 
-SELECT @BotRedesWebChat :=  LAST_INSERT_ID();
-
-INSERT INTO BOT_REDES (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, BAJO_DEMANDA, TIPO_CLIENTE, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '2', '1', 1,1, NOW(), @creadoPor);
-
-SELECT @BtoRedesFB :=  LAST_INSERT_ID();
-
-INSERT INTO BOT_REDES (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, TIPO_CLIENTE, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '11', '1',1, NOW(), @creadoPor);
-
-SELECT @BtoRedesComentsFB :=  LAST_INSERT_ID(); 
-
-INSERT INTO BOT_REDES (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, BAJO_DEMANDA,TIPO_CLIENTE, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '10', '1', 1,1, NOW(), @creadoPor);
-
-SELECT @BtoRedesIG :=  LAST_INSERT_ID(); 
-
-INSERT INTO BOT_REDES (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, TIPO_CLIENTE, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '12', '1',1, NOW(), @creadoPor);
-
-SELECT @BtoRedesComentsIG :=  LAST_INSERT_ID(); 
-
-INSERT INTO BOT_REDES (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO,TIPO_CLIENTE, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '5', '0',1, NOW(), @creadoPor);
-
-SELECT @BtoRedesBroadcastWhatsapp :=  LAST_INSERT_ID();
-
+-- Web Catalogo
 INSERT INTO BOT_REDES (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '6', '0', NOW(), @creadoPor);
-
-SELECT @BtoRedesBroadcastSMS :=  LAST_INSERT_ID();
-
-INSERT INTO BOT_REDES (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '9', '1', NOW(), @creadoPor);
-
-SELECT @BtoRedesVentas :=  LAST_INSERT_ID(); 
-*/
-
-/*  BOT REDES BETA  */
-
-INSERT INTO BOT_REDES_BETA (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '1', '1', NOW(), @creadoPor);
-
-SELECT @BotRedesWhatsappBeta :=  LAST_INSERT_ID();
-
-/*
-INSERT INTO BOT_REDES_BETA (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '7', '1', NOW(), @creadoPor);
-
-SELECT @BotRedesWebChatBeta :=  LAST_INSERT_ID();
-
-INSERT INTO BOT_REDES_BETA (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '2', '1', NOW(), @creadoPor);
-
-SELECT @BtoRedesFB :=  LAST_INSERT_ID();
-
-INSERT INTO BOT_REDES_BETA(ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '11', '1', NOW(), @creadoPor);
-
-SELECT @BtoRedesComentsFB :=  LAST_INSERT_ID();
-
-INSERT INTO BOT_REDES_BETA(ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '10', '1', NOW(), @creadoPor);
-
-SELECT @BtoRedesIG :=  LAST_INSERT_ID(); 
-
-INSERT INTO BOT_REDES_BETA(ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '12', '1', NOW(), @creadoPor);
-
-SELECT @BtoRedesComentsIG :=  LAST_INSERT_ID();
-
-INSERT INTO BOT_REDES_BETA (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '5', '0', NOW(), @creadoPor);
-
-SELECT @BtoRedesBroadcastWhatsapp :=  LAST_INSERT_ID();
-
-INSERT INTO BOT_REDES_BETA (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
-VALUES (@BotID, @idPais, '6', '0', NOW(), @creadoPor);
-
-SELECT @BtoRedesBroadcastSMS :=  LAST_INSERT_ID();
-
-INSERT INTO BOT_REDES_BETA (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
 VALUES (@BotID, @idPais, '9', '1', NOW(), @creadoPor);
 
 SELECT @BtoRedesWebCatalogo := LAST_INSERT_ID();
+
+/* BOT_REDES_BETA - Generado según selección de la ventana */
+
+-- WhatsApp
+INSERT INTO BOT_REDES_BETA (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
+VALUES (@BotID, @idPais, '1', '1', NOW(), @creadoPor);
+
+SELECT @BotRedesWhatsappBeta := LAST_INSERT_ID();
+
+-- Web Catalogo
+INSERT INTO BOT_REDES_BETA (ID_BOT, ID_PAIS, ID_RED_SOCIAL, ESTADO, CREADO_EL, CREADO_POR) 
+VALUES (@BotID, @idPais, '9', '1', NOW(), @creadoPor);
+
+SELECT @BtoRedesWebCatalogoBeta := LAST_INSERT_ID();
 
 /* SE INSERTA EL REGISTRO EN ACUMULADOR */
 
@@ -1519,21 +1451,18 @@ SET API_TOKEN = @tokenEmpresa,
 	TOKEN_NOTIFICADOR_SMS = 'el1qMpSFvIY:APA91bFx7MatRE__fiG6eFZSxeG-jd6BMXgAPNIZ2OKRpB8Edx0hO2QmbB4OAqyakbc0jvwiyIHIiDZ_bCMCujJv6u47RczsRIstraRZtK826MOAseepuXwBJ5wT_izE_iJQwhM5Ex6m'
 WHERE ID_EMPRESA = @EmpresaID;
 
-/* SE INSERTA EN LA BOT_RED_CONF_VALORES */
+/* SE INSERTA EN LA BOT_RED_CONF_VALORES - Generado según selección de la ventana */
 
+-- WhatsApp
 INSERT INTO BOT_RED_CONF_VALORES (ID_BOT_REDES, ID_BOT_RED_CONFIGURACION, VALOR, CREADO_EL, CREADO_POR) 
 VALUES (@BotRedesWhatsapp, '1', @TELEFONO_WHATSAPP_WEBCHAT, NOW(), @creadoPor);
 
 INSERT INTO BOT_RED_CONF_VALORES (ID_BOT_REDES, ID_BOT_RED_CONFIGURACION, VALOR, CREADO_EL, CREADO_POR) 
 VALUES (@BotRedesWhatsapp, '4', @socketUrl, NOW(), @creadoPor);
 
-/*
-INSERT INTO BOT_RED_CONF_VALORES (ID_BOT_REDES, ID_BOT_RED_CONFIGURACION, VALOR, CREADO_EL, CREADO_POR) 
-VALUES (@BotRedesWebChat, '4', @socketUrl, NOW(), @creadoPor);
-
+-- Web Catalogo
 INSERT INTO BOT_RED_CONF_VALORES (ID_BOT_REDES, ID_BOT_RED_CONFIGURACION, VALOR, CREADO_EL, CREADO_POR) 
 VALUES (@BtoRedesWebCatalogo, '4', @socketUrl, NOW(), @creadoPor);
-*/
 
 /*  SE ACTUALIZA EL PARAMETRO PARA CREAR CONVERSACIONES DE BROADCAST */
 UPDATE PARAMETROS
@@ -1575,7 +1504,7 @@ VALUES (@EmpresaID, 2, @BotID, @NombreBOT, 'TIEMPO_INACTIVIDAD_BOT_NODO_DERIVACI
 -- SE AGREGA CONFIGURACION PARA EL TOKEN DE META PARA OBTENER INFORMACION DE PRODUCTOS,
 -- SI LA EMPRESA NO TIENE CANAL DE WHATSAPP NO ES NECESARIO AGREGAR ESTA CONFIGURACION (LA DEL TOKEN).
 
-SET @V_TOKEN := 'YOUR_META_CATALOGS_TOKEN_HERE';
+SET @V_TOKEN := 'EAAC3uZAaz2UwBO9PZAuocSRnikxXUXTeDN6VxkLYRtV2gLa2tVZBdjqTyN9njgaZA8sZCokWFFf5824xUarYxIj7TZAJTJiBJsQvgNIPFBoOxsk0aVZBCPUDxfm6rLKC1nV58hHtwZCANuoDJ5Ew1mqizs8oh91XAtVZA4AV8eqZBIML2v7g4wJ7Vuouxc';
 
 SET @V_ID_BOT_RED_CONFIGURACION_CATALOGO := (SELECT ID_BOT_RED_CONFIGURACION FROM BOT_RED_CONFIGURACION WHERE NOMBRE_PARAMETRO='TOKEN_CATALOGOS_WHATSAPP');
 

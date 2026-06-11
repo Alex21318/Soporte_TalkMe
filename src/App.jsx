@@ -13,6 +13,7 @@ import Reportes from './pages/Reportes/Reportes2';
 import Cierres from './pages/Cierres/Cierres';
 import Creaciones from './pages/Creaciones/Creaciones';
 import DiagramasBD from './pages/DiagramasBD/DiagramasBD';
+import Diagramas from './pages/Diagramas/Diagramas';
 import Configuraciones from './pages/Configuraciones/Configuraciones';
 import { API_URLS } from './config/api';
 import './App.css';
@@ -42,6 +43,9 @@ function App() {
         const data = await response.json();
         setIsAuthenticated(true);
         setUser(data.user);
+        if (data.user.permissions) {
+          sessionStorage.setItem('user_permissions', JSON.stringify(data.user.permissions));
+        }
       } else {
         sessionStorage.removeItem('auth_token');
         sessionStorage.removeItem('user_info');
@@ -147,6 +151,7 @@ function App() {
             <Route path="/reportes" element={<Reportes />} />
             <Route path="/cierres" element={<Cierres />} />
             <Route path="/creaciones" element={<Creaciones />} />
+            <Route path="/diagramas" element={<Diagramas />} />
             <Route path="/diagramas-bd" element={<DiagramasBD />} />
             <Route path="/auditoria" element={<Navigate to="/cierres" replace />} />
             <Route path="/configuraciones" element={<Configuraciones />} />

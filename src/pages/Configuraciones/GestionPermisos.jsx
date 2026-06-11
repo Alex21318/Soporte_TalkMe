@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from 'react-toastify';
 import { fetchWithAuth } from '../../utils/fetchWithAuth';
 import './GestionPermisos.css';
 
@@ -145,25 +146,35 @@ function GestionPermisos() {
     if (modoVista === 'usuario' && !selectedUsuario) return;
 
     try {
+      let response;
       if (modoVista === 'rol') {
-        await fetchWithAuth(`/api/auth/roles/${selectedRol.id}/permisos`, {
+        response = await fetchWithAuth(`/api/auth/roles/${selectedRol.id}/permisos`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ permisoIds: rolPermisos.map(p => p.id) })
         });
-        setRolPermisosOriginal(rolPermisos); // Actualizar estado original
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.error || 'Error al guardar permisos del rol');
+        }
+        setRolPermisosOriginal(rolPermisos);
       } else {
-        await fetchWithAuth(`/api/auth/users/${selectedUsuario.id}/permisos`, {
+        response = await fetchWithAuth(`/api/auth/users/${selectedUsuario.id}/permisos`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ permisoIds: usuarioPermisos.map(p => p.id) })
         });
-        setUsuarioPermisosOriginal(usuarioPermisos); // Actualizar estado original
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.error || 'Error al guardar permisos del usuario');
+        }
+        setUsuarioPermisosOriginal(usuarioPermisos);
       }
-      setHaysCambios(false); // Limpiar el flag de cambios
+      setHaysCambios(false);
+      toast.success('Permisos guardados correctamente');
     } catch (error) {
       console.error('Error guardando permisos:', error);
-      alert('Error al guardar los permisos. Por favor intenta de nuevo.');
+      toast.error('Error al guardar los permisos: ' + error.message);
     }
   };
 

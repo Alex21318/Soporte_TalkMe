@@ -1,7 +1,6 @@
 // BotNode.jsx - MEJORADO (líneas distribuidas en la entrada del nodo destino)
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
-import { fetchWithAuth } from '../../../utils/fetchWithAuth';
 
 const LINE_COLORS = ['#0ea5e9', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#84cc16', '#6366f1'];
 
@@ -36,7 +35,7 @@ async function fetchImageAsDataUrl(url) {
   const promise = (async () => {
     try {
       const proxied = `https://wsrv.nl/?url=${encodeURIComponent(url)}&output=png`;
-      const res = await fetchWithAuth(proxied, { cache: 'no-store' });
+      const res = await fetch(proxied, { cache: 'no-store' });
       const blob = await res.blob();
       const dataUrl = await new Promise((resolve, reject) => {
         const r = new FileReader();
@@ -237,10 +236,10 @@ export default function BotNode({ id, data, selected }) {
   const hasQuestions = data.questions && data.questions.length > 0;
   const hasLocation = isValido(data.latitud) && isValido(data.longitud);
   const mapsUrl = hasLocation ? `https://www.google.com/maps?q=${data.latitud},${data.longitud}` : null;
-  const isImage = data.fileType === 'image' || (!data.fileType && isValido(data.imagen));
-  const showImage = isImage && isValido(data.imagen);
-  const isUrlFile = data.fileType && data.fileType !== 'none' && data.fileType !== 'image';
-  const showUrlFile = isUrlFile && isValido(data.fileUrl);
+  const isImage = isValido(data.imagen);
+  const showImage = isImage;
+  const isUrlFile = data.fileType && data.fileType !== 'none' && isValido(data.fileUrl);
+  const showUrlFile = isUrlFile;
   const showPlainArchivo = (!showImage && !showUrlFile) && isValido(data.archivo);
   const hasSkill = isValido(data.skill);
   const hasCierre = isValido(data.cierreTipologia);
