@@ -18,6 +18,100 @@ let registrarAuditoria = null;
 const instruccionesBloqueadasScript = /\b(DROP|TRUNCATE|ALTER\s+DATABASE|CREATE\s+DATABASE|USE\s+|GRANT|REVOKE)\b/i;
 const plantillaSqlPath = path.join(process.cwd(), 'src', 'pages', 'Creaciones', 'Creacion_nueva_instancia.sql');
 
+function splitSqlStatements(sql) {
+  const statements = [];
+  let currentStatement = '';
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inBacktick = false;
+  let inLineComment = false; // -- o #
+  let inBlockComment = false; // /* */
+  
+  function hasSQLContent(stmt) {
+    let clean = stmt.replace(/\/\*[\s\S]*?\*\//g, '');
+    clean = clean.replace(/--.*$/gm, '');
+    clean = clean.replace(/#.*$/gm, '');
+    return clean.trim().length > 0;
+  }
+  
+  for (let i = 0; i < sql.length; i++) {
+    const char = sql[i];
+    const nextChar = sql[i + 1];
+    
+    if (inLineComment) {
+      if (char === '\n' || char === '\r') {
+        inLineComment = false;
+      }
+      currentStatement += char;
+      continue;
+    }
+    
+    if (inBlockComment) {
+      if (char === '*' && nextChar === '/') {
+        inBlockComment = false;
+        currentStatement += '*/';
+        i++;
+      } else {
+        currentStatement += char;
+      }
+      continue;
+    }
+    
+    if (!inSingleQuote && !inDoubleQuote && !inBacktick) {
+      if (char === '-' && nextChar === '-') {
+        inLineComment = true;
+        currentStatement += '--';
+        i++;
+        continue;
+      }
+      if (char === '#') {
+        inLineComment = true;
+        currentStatement += '#';
+        continue;
+      }
+      if (char === '/' && nextChar === '*') {
+        inBlockComment = true;
+        currentStatement += '/*';
+        i++;
+        continue;
+      }
+    }
+    
+    if (char === "'" && !inDoubleQuote && !inBacktick) {
+      if (char === "'" && sql[i - 1] === '\\') {
+        // Escapado
+      } else {
+        inSingleQuote = !inSingleQuote;
+      }
+    } else if (char === '"' && !inSingleQuote && !inBacktick) {
+      if (char === '"' && sql[i - 1] === '\\') {
+        // Escapado
+      } else {
+        inDoubleQuote = !inDoubleQuote;
+      }
+    } else if (char === '`' && !inSingleQuote && !inDoubleQuote) {
+      inBacktick = !inBacktick;
+    }
+    
+    if (char === ';' && !inSingleQuote && !inDoubleQuote && !inBacktick) {
+      const trimmed = currentStatement.trim();
+      if (trimmed && hasSQLContent(trimmed)) {
+        statements.push(trimmed);
+      }
+      currentStatement = '';
+    } else {
+      currentStatement += char;
+    }
+  }
+  
+  const trimmed = currentStatement.trim();
+  if (trimmed && hasSQLContent(trimmed)) {
+    statements.push(trimmed);
+  }
+  
+  return statements;
+}
+
 // Inicializar con referencias necesarias
 function init(pool, auditoriaFn) {
   poolControl = pool;
@@ -65,7 +159,11 @@ router.post('/api/creaciones/instancia/probar-sql', async (req, res) => {
     const targetPool = getPool(dbKey);
     connection = await targetPool.getConnection();
     await connection.beginTransaction();
-    await connection.query(sqlScript);
+    
+    const statements = splitSqlStatements(sqlScript);
+    for (const stmt of statements) {
+      await connection.query(stmt);
+    }
 
     const [idsRows] = await connection.query(
       'SELECT @EmpresaID AS idEmpresa, @BotID AS idBot, @UsuarioNombre AS usuarioRoot'
@@ -257,7 +355,11 @@ router.post('/api/creaciones/instancia', authMiddleware, async (req, res) => {
       const targetPool = getPool(dbKey);
       scriptConnection = await targetPool.getConnection();
       await scriptConnection.beginTransaction();
-      await scriptConnection.query(sqlScript);
+      
+      const statements = splitSqlStatements(sqlScript);
+      for (const stmt of statements) {
+        await scriptConnection.query(stmt);
+      }
 
       const [idsRows] = await scriptConnection.query(
         'SELECT @EmpresaID AS idEmpresa, @BotID AS idBot, @UsuarioNombre AS usuarioRoot'
@@ -1556,7 +1658,10 @@ router.post('/api/creaciones/whatsapp', async (req, res) => {
       log = resultado.log;
       resumen = resultado.resumen;
     } else {
-      await connection.query(sqlScript);
+      const statements = splitSqlStatements(sqlScript);
+      for (const stmt of statements) {
+        await connection.query(stmt);
+      }
     }
 
     await connection.commit();
@@ -1659,7 +1764,10 @@ router.post('/api/creaciones/whatsapp/probar', async (req, res) => {
       log = resultado.log;
       resumen = resultado.resumen;
     } else {
-      await connection.query(sqlScript);
+      const statements = splitSqlStatements(sqlScript);
+      for (const stmt of statements) {
+        await connection.query(stmt);
+      }
     }
 
     // SIEMPRE rollback en modo probar

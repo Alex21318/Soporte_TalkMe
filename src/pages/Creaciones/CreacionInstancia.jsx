@@ -476,7 +476,7 @@ ${inserts.join('\n\n')}
   };
 
   const aplicarBotRedConfValoresSQL = (sql) => {
-    const inicio = sql.indexOf('/* SE INSERTA EN LA BOT_RED_CONF_VALORES */');
+    const inicio = sql.indexOf('/* SE INSERTA EN LA BOT_RED_CONF_VALORES - Generado según selección de la ventana */');
     const fin = sql.indexOf('/*  SE ACTUALIZA EL PARAMETRO PARA CREAR CONVERSACIONES DE BROADCAST */');
 
     if (inicio === -1 || fin === -1 || fin <= inicio) {
